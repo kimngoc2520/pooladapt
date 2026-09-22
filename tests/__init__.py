@@ -1,0 +1,1 @@
+"""PoolAdapt smoke tests."""
