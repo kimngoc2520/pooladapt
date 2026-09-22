@@ -40,3 +40,6 @@ outputs/
 runs/
 results/
 logs/
+
+# Agent rules
+.cursorrules
