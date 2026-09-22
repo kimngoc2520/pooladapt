@@ -1,42 +1,42 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
-.env
-
-# Testing and coverage
-.pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# VS Code
-.vscode/
-
-# OS-generated files
-.DS_Store
-Thumbs.db
-
-# Large data and model artifacts
-data/**/*
+# Python 
+__pycache__/ 
+*.py[cod] 
+*.egg-info/ 
+.eggs/ 
+ 
+# Virtual environments 
+.venv/ 
+venv/ 
+env/ 
+ENV/ 
+.env 
+ 
+# Testing and coverage 
+.pytest_cache/ 
+.coverage 
+.coverage.* 
+htmlcov/ 
+ 
+# Jupyter 
+.ipynb_checkpoints/ 
+ 
+# VS Code 
+.vscode/ 
+ 
+# OS-generated files 
+.DS_Store 
+Thumbs.db 
+ 
+# Large data and model artifacts 
+data/**/* 
 !data/**/
-*.ckpt
-*.pt
-*.pth
-*.safetensors
-
-# Experiment outputs
-outputs/
-runs/
-results/
+*.ckpt 
+*.pt 
+*.pth 
+*.safetensors 
+ 
+# Experiment outputs 
+outputs/ 
+runs/ 
+results/ 
 logs/
