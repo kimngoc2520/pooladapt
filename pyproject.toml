@@ -7,6 +7,9 @@ name = "pooladapt"
 version = "0.1.0"
 description = "Research codebase for candidate-pool-aware selective reranking."
 requires-python = ">=3.10"
+dependencies = [
+	"sentence-transformers>=3.0",
+]
 
 [tool.setuptools.packages.find]
 include = ["src*"]
