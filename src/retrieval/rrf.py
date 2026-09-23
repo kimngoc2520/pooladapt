@@ -20,12 +20,19 @@ def fuse_ranked_lists(
         raise ValueError("k and top_n must be non-negative")
     pooled: dict[str, dict[str, Any]] = {}
     for source, candidates in ranked_lists.items():
+        seen_in_source: set[str] = set()
         for rank, candidate in enumerate(candidates, start=1):
             document_id = str(candidate["id"])
+            if document_id in seen_in_source:
+                continue
+            seen_in_source.add(document_id)
             result = pooled.setdefault(document_id, {"id": document_id, "rrf_score": 0.0})
             result.update({key: value for key, value in candidate.items() if key != "id"})
             result[f"{source}_rank"] = rank
             if "score" in candidate:
                 result[f"{source}_score"] = candidate["score"]
             result["rrf_score"] += 1 / (k + rank)
-    return sorted(pooled.values(), key=lambda item: item["rrf_score"], reverse=True)[:top_n]
+    results = sorted(pooled.values(), key=lambda item: (-item["rrf_score"], item["id"]))[:top_n]
+    for rank, result in enumerate(results, start=1):
+        result["rank"] = rank
+    return results

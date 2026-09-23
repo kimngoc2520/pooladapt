@@ -27,13 +27,20 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Large data and model artifacts
-data/**/*
-!data/**/
+# Dataset
+data/fiqa/
+data/hotpotqa/
+data/scifact/
+data/raw/
+data/cache/
+data/downloads/
+
+# Large model artifacts
 *.ckpt
 *.pt
 *.pth
 *.safetensors
+*.onnx
 
 # Experiment outputs
 outputs/
@@ -43,3 +50,4 @@ logs/
 
 # Agent rules
 .cursorrules
+logs/

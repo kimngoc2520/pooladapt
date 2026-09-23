@@ -9,6 +9,9 @@ description = "Research codebase for candidate-pool-aware selective reranking."
 requires-python = ">=3.10"
 dependencies = [
 	"sentence-transformers>=3.0",
+    "numpy>=1.24",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=2.2",
 ]
 
 [tool.setuptools.packages.find]
