@@ -32,7 +32,6 @@ from src.retrieval.rrf import fuse_ranked_lists
 DEFAULT_BUDGETS = (10, 20, 30, 50)
 RAW_RESULT_FIELDS = ["query_id", "method", "budget", "candidate_pool_size", "reranked_pairs", "compression_ratio", "latency_seconds", "ndcg_at_10", "recall_at_10", "mrr_at_10", "top_k_doc_ids"]
 SUMMARY_RESULT_FIELDS = ["method", "budget", "mean_ndcg_at_10", "mean_recall_at_10", "mean_mrr_at_10", "mean_reranked_pairs", "mean_compression_ratio", "mean_latency_seconds"]
-METHOD_ORDER = {"full_rerank": 0, "fixed_prefix": 1, "random_selection": 2}
 
 
 def build_candidate_pool(query: str, corpus: Mapping[str, Mapping[str, Any]], bm25: Any, dense: Any, pool_size: int = 100) -> list[dict[str, Any]]:
@@ -100,10 +99,7 @@ def summarize_records(records: Sequence[Mapping[str, Any]]) -> list[dict[str, An
             "mean_compression_ratio": mean(group, "compression_ratio"),
             "mean_latency_seconds": mean(group, "latency_seconds"),
         }
-        for (method, budget), group in sorted(
-            grouped.items(),
-            key=lambda item: (METHOD_ORDER.get(item[0][0], 3), item[0][1]),
-        )
+        for (method, budget), group in grouped.items()
     ]
 
 
@@ -119,16 +115,8 @@ def write_result_files(records: Sequence[Mapping[str, Any]], output_dir: Path) -
     output_dir.mkdir(parents=True, exist_ok=True)
     raw_path = output_dir / "phase1_baselines_scifact.csv"
     summary_path = output_dir / "phase1_summary_scifact.csv"
-    sorted_records = sorted(
-        records,
-        key=lambda record: (
-            str(record["query_id"]),
-            METHOD_ORDER.get(str(record["method"]), 3),
-            int(record["budget"]),
-        ),
-    )
-    _write_csv(raw_path, RAW_RESULT_FIELDS, sorted_records)
-    _write_csv(summary_path, SUMMARY_RESULT_FIELDS, summarize_records(sorted_records))
+    _write_csv(raw_path, RAW_RESULT_FIELDS, records)
+    _write_csv(summary_path, SUMMARY_RESULT_FIELDS, summarize_records(records))
     return raw_path, summary_path
 
 

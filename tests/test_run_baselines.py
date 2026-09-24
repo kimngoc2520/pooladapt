@@ -91,17 +91,5 @@ class BaselineRunnerTests(unittest.TestCase):
         ])
         self.assertEqual(summaries, [{"method": "fixed_prefix", "budget": 10, "mean_ndcg_at_10": 0.4, "mean_recall_at_10": 0.6000000000000001, "mean_mrr_at_10": 0.75, "mean_reranked_pairs": 10.0, "mean_compression_ratio": 0.9, "mean_latency_seconds": 3.0}])
 
-    def test_csv_rows_are_deterministically_sorted(self):
-        records = [
-            {"query_id": "q2", "method": "random_selection", "budget": 20, "candidate_pool_size": 100, "reranked_pairs": 20, "compression_ratio": 0.8, "latency_seconds": 2.0, "ndcg_at_10": 0.2, "recall_at_10": 0.2, "mrr_at_10": 0.2, "top_k_doc_ids": "2"},
-            {"query_id": "q1", "method": "fixed_prefix", "budget": 10, "candidate_pool_size": 100, "reranked_pairs": 10, "compression_ratio": 0.9, "latency_seconds": 1.0, "ndcg_at_10": 0.1, "recall_at_10": 0.1, "mrr_at_10": 0.1, "top_k_doc_ids": "1"},
-        ]
-        with tempfile.TemporaryDirectory() as directory:
-            raw_path, _ = write_result_files(records, Path(directory))
-            with raw_path.open(encoding="utf-8", newline="") as handle:
-                rows = list(csv.DictReader(handle))
-
-        self.assertEqual([row["query_id"] for row in rows], ["q1", "q2"])
-
     def test_output_dir_argument_is_parsed(self):
         self.assertEqual(build_parser().parse_args(["--output-dir", "results/test_run"]).output_dir, Path("results/test_run"))
