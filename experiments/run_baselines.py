@@ -81,6 +81,9 @@ def main() -> None:
     bm25 = BM25Retriever(corpus)
     dense = DenseRetriever(corpus, model_name=args.model)
     reranker = CrossEncoderReranker()
+    # Do not include model construction/download or the first inference in the
+    # per-query latency measurements below.
+    reranker.warm_up()
     methods: dict[str, dict[str, Any]] = {"full_rerank": {"predictions": []}}
     for budget in args.prefix_budgets:
         methods[f"fixed_prefix_{budget}"] = {"predictions": []}
@@ -103,17 +106,35 @@ def main() -> None:
 
         full_results = rerank_full(query, candidates, reranker, top_k=args.top_k)
         methods["full_rerank"]["predictions"].append(
-            {"query_id": str(query_id), "document_ids": document_ids(full_results), "reranked_pairs": len(candidates)}
+            {
+                "query_id": str(query_id),
+                "document_ids": document_ids(full_results),
+                "reranked_pairs": len(candidates),
+                "latency_rerank_seconds": reranker.last_latency_rerank_seconds,
+                "latency_ce_seconds": reranker.last_latency_ce_seconds,
+            }
         )
 
         for budget in args.prefix_budgets:
             prefix_results = reranker.rerank(query, select(candidates, budget), top_k=args.top_k)
             methods[f"fixed_prefix_{budget}"]["predictions"].append(
-                {"query_id": str(query_id), "document_ids": document_ids(prefix_results), "reranked_pairs": budget}
+                {
+                    "query_id": str(query_id),
+                    "document_ids": document_ids(prefix_results),
+                    "reranked_pairs": budget,
+                    "latency_rerank_seconds": reranker.last_latency_rerank_seconds,
+                    "latency_ce_seconds": reranker.last_latency_ce_seconds,
+                }
             )
             random_results = rerank_random(query, candidates, budget, reranker, seed=args.seed, top_k=args.top_k)
             methods[f"random_{budget}"]["predictions"].append(
-                {"query_id": str(query_id), "document_ids": document_ids(random_results), "reranked_pairs": budget}
+                {
+                    "query_id": str(query_id),
+                    "document_ids": document_ids(random_results),
+                    "reranked_pairs": budget,
+                    "latency_rerank_seconds": reranker.last_latency_rerank_seconds,
+                    "latency_ce_seconds": reranker.last_latency_ce_seconds,
+                }
             )
 
     output = {
