@@ -28,12 +28,8 @@ htmlcov/
 Thumbs.db
 
 # Dataset
-data/fiqa/
-data/hotpotqa/
-data/scifact/
-data/raw/
-data/cache/
-data/downloads/
+data/
+!data/.gitkeep
 
 # Large model artifacts
 *.ckpt
@@ -46,4 +42,9 @@ data/downloads/
 outputs/
 runs/
 results/
+
+# Logs
 logs/
+
+# Agent rules
+.cursorrules
