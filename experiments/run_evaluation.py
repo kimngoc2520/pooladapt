@@ -109,7 +109,10 @@ def evaluate_method(
         recall_scores.append(recall_at_k(ranked_ids, relevance, k=top_k))
         mrr_scores.append(mrr_at_k(ranked_ids, relevance, k=top_k))
 
-    pair_counts = [reranked_pairs_per_query(int(prediction["reranked_pairs"])) for prediction in predictions]
+    pair_counts = [
+        reranked_pairs_per_query(int(prediction["reranked_pairs"]))
+        for prediction in matched_predictions
+    ]
     average_pairs = average_reranked_pairs(pair_counts)
     return {
         "quality_query_count": len(matched_predictions),
@@ -176,7 +179,7 @@ def main() -> None:
         if result["missing_qrels_query_count"]:
             print(
                 f"WARNING: {method_name} has {result['missing_qrels_query_count']} prediction query IDs "
-                "without test qrels; quality metrics use matched queries only."
+                "without test qrels; quality and cost metrics use matched queries only."
             )
 
 
