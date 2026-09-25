@@ -9,6 +9,7 @@ description = "Research codebase for candidate-pool-aware selective reranking."
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
+    "scipy>=1.10",
     "rank-bm25>=0.2.2",
 	"sentence-transformers>=3.0",
 	"tqdm>=4.66",
