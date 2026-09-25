@@ -9,6 +9,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from tqdm import tqdm
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -86,7 +88,11 @@ def main() -> None:
         methods[f"fixed_prefix_{budget}"] = {"predictions": []}
         methods[f"random_{budget}"] = {"predictions": []}
 
-    for query_id, query in query_items:
+    for query_id, query in tqdm(
+        query_items,
+        desc="Running baseline experiments",
+        unit="query",
+    ):
         fused = fuse_ranked_lists(
             {
                 "bm25": bm25.retrieve(query, top_n=CANDIDATE_POOL_SIZE),
