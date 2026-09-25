@@ -27,6 +27,7 @@ from src.evaluation.retrieval_metrics import mrr_at_k, ndcg_at_k, recall_at_k
 
 CANDIDATE_POOL_SIZE = 100
 FINAL_TOP_K = 10
+TEST_QUERY_COUNT = 300
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -342,6 +343,8 @@ def main() -> None:
         args.dataset_dir,
         qrels_split="test",
     )
+    if len(qrels) != TEST_QUERY_COUNT:
+        raise ValueError(f"Expected {TEST_QUERY_COUNT} SciFact test queries, found {len(qrels)}")
 
     results: dict[str, dict[str, Any]] = {}
 
@@ -352,6 +355,17 @@ def main() -> None:
         if not isinstance(method_predictions, list):
             raise ValueError(
                 f"Method {method_name!r} must contain a predictions list"
+            )
+
+        actual_ids = {str(prediction["query_id"]) for prediction in method_predictions}
+        expected_ids = set(qrels)
+        if actual_ids != expected_ids or len(method_predictions) != TEST_QUERY_COUNT:
+            missing = sorted(expected_ids - actual_ids)
+            unexpected = sorted(actual_ids - expected_ids)
+            raise ValueError(
+                f"Method {method_name!r} must contain exactly the {TEST_QUERY_COUNT} "
+                f"test query IDs; missing={missing[:5]}, unexpected={unexpected[:5]}, "
+                f"count={len(method_predictions)}"
             )
 
         results[method_name] = evaluate_method(
@@ -379,6 +393,9 @@ def main() -> None:
     output = {
         "dataset": prediction_data.get("dataset"),
         "qrels_split": "test",
+        "split": "test",
+        "num_queries": len(qrels),
+        "metadata": prediction_data.get("metadata", {}),
         "candidate_pool_size": prediction_data["candidate_pool_size"],
         "top_k": prediction_data["top_k"],
         "qrels_query_count": len(qrels),
