@@ -10,7 +10,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -22,6 +21,7 @@ from src.evaluation.cost_metrics import (
     reranked_pairs_per_query,
     total_reranking_pairs,
 )
+from src.evaluation.latency_metrics import build_latency_report
 from src.evaluation.retrieval_metrics import mrr_at_k, ndcg_at_k, recall_at_k
 
 
@@ -222,16 +222,34 @@ def evaluate_method(
 
 
 def print_table(results: Mapping[str, Mapping[str, Any]]) -> None:
-    """Print a compact, reproducible baseline comparison table."""
+    """Print a compact Phase 1 quality, cost, and latency comparison table."""
     print(
         "Method | nDCG@10 | Recall@10 | MRR@10 | "
-        "Avg Pairs | Total Pairs | Compression"
+        "Avg Pairs | Total Pairs | Compression | "
+        "L_rerank Mean | L_rerank P50 | L_rerank P95 | "
+        "L_CE Mean | L_CE P50 | L_CE P95 | "
+        "LR Mean | LR P50 | LR P95"
     )
     print(
-        "--- | ---: | ---: | ---: | ---: | ---: | ---:"
+        "--- | ---: | ---: | ---: | ---: | ---: | ---: | "
+        "---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---:"
     )
 
     for method_name, result in results.items():
+        latency = result["latency"]
+
+        rerank = latency["rerank_latency_seconds"]
+        ce = latency["ce_latency_seconds"]
+        reduction = latency["latency_reduction"]
+
+        if reduction is None:
+            reduction_cells = ("-", "-", "-")
+        else:
+            reduction_cells = tuple(
+                f"{reduction[key]:.6f}"
+                for key in ("mean", "p50", "p95")
+            )
+
         print(
             f"{method_name} | "
             f"{result['ndcg_at_10']:.6f} | "
@@ -239,7 +257,14 @@ def print_table(results: Mapping[str, Mapping[str, Any]]) -> None:
             f"{result['mrr_at_10']:.6f} | "
             f"{result['average_reranked_pairs_per_query']:.2f} | "
             f"{result['total_reranking_pairs']} | "
-            f"{result['compression_ratio']:.2%}"
+            f"{result['compression_ratio']:.2%} | "
+            f"{rerank['mean']:.6f} | "
+            f"{rerank['p50']:.6f} | "
+            f"{rerank['p95']:.6f} | "
+            f"{ce['mean']:.6f} | "
+            f"{ce['p50']:.6f} | "
+            f"{ce['p95']:.6f} | "
+            + " | ".join(reduction_cells)
         )
 
 
@@ -247,7 +272,7 @@ def save_csv(
     results: Mapping[str, Mapping[str, Any]],
     output_path: Path,
 ) -> None:
-    """Save the baseline comparison metrics as CSV."""
+    """Save the Phase 1 comparison metrics as CSV."""
     csv_path = output_path.with_suffix(".csv")
 
     with csv_path.open(
@@ -266,10 +291,25 @@ def save_csv(
                 "average_reranked_pairs_per_query",
                 "total_reranking_pairs",
                 "compression_ratio",
+                "rerank_latency_mean",
+                "rerank_latency_p50",
+                "rerank_latency_p95",
+                "ce_latency_mean",
+                "ce_latency_p50",
+                "ce_latency_p95",
+                "latency_reduction_mean",
+                "latency_reduction_p50",
+                "latency_reduction_p95",
             ]
         )
 
         for method_name, result in results.items():
+            latency = result["latency"]
+
+            rerank = latency["rerank_latency_seconds"]
+            ce = latency["ce_latency_seconds"]
+            reduction = latency["latency_reduction"]
+
             writer.writerow(
                 [
                     method_name,
@@ -279,6 +319,15 @@ def save_csv(
                     result["average_reranked_pairs_per_query"],
                     result["total_reranking_pairs"],
                     result["compression_ratio"],
+                    rerank["mean"],
+                    rerank["p50"],
+                    rerank["p95"],
+                    ce["mean"],
+                    ce["p50"],
+                    ce["p95"],
+                    None if reduction is None else reduction["mean"],
+                    None if reduction is None else reduction["p50"],
+                    None if reduction is None else reduction["p95"],
                 ]
             )
 
@@ -296,6 +345,7 @@ def main() -> None:
 
     results: dict[str, dict[str, Any]] = {}
 
+    # Quality + cost evaluation.
     for method_name, method_data in prediction_data["methods"].items():
         method_predictions = method_data.get("predictions")
 
@@ -311,6 +361,20 @@ def main() -> None:
             prediction_data["top_k"],
             prediction_data["candidate_pool_size"],
         )
+
+    # Latency evaluation.
+    # The latency measurements were already collected by run_baselines.py,
+    # so this step only aggregates the recorded values. It does not rerun
+    # retrieval or Cross-Encoder inference.
+    latency_report = build_latency_report(prediction_data)
+
+    for method_name, latency_result in latency_report["methods"].items():
+        if method_name not in results:
+            raise ValueError(
+                f"Latency report contains unknown method {method_name!r}"
+            )
+
+        results[method_name]["latency"] = latency_result
 
     output = {
         "dataset": prediction_data.get("dataset"),
