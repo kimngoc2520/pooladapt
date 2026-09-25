@@ -93,7 +93,7 @@ def main() -> None:
 
     for query_id, query in tqdm(
         query_items,
-        desc="Phase 1 baselines (Full/Prefix/Random)",
+        desc="Running baseline experiments",
         unit="query",
     ):
         fused = fuse_ranked_lists(

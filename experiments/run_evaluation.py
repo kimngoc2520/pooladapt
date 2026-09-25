@@ -10,8 +10,6 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from tqdm import tqdm
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -348,12 +346,7 @@ def main() -> None:
     results: dict[str, dict[str, Any]] = {}
 
     # Quality + cost evaluation.
-    for method_name, method_data in tqdm(
-        prediction_data["methods"].items(),
-        total=len(prediction_data["methods"]),
-        desc="Evaluating methods",
-        unit="method",
-    ):
+    for method_name, method_data in prediction_data["methods"].items():
         method_predictions = method_data.get("predictions")
 
         if not isinstance(method_predictions, list):
