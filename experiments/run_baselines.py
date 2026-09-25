@@ -20,10 +20,12 @@ from src.baselines.full_rerank import rerank_full
 from src.baselines.random_selection import rerank_random
 from src.data import load_beir_dataset
 from src.reranking import CrossEncoderReranker
+from src.reranking.cross_encoder import DEFAULT_MODEL_NAME
 from src.retrieval import DEFAULT_MODEL, BM25Retriever, DenseRetriever, fuse_ranked_lists
 
 
 CANDIDATE_POOL_SIZE = 100
+TEST_QUERY_COUNT = 300
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -31,6 +33,7 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--queries", type=int, default=0, help="Number of queries to run; 0 runs all queries.")
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/scifact"))
+    parser.add_argument("--split", choices=["test"], default="test", help="Qrels-defined query split.")
     parser.add_argument("--model", default=DEFAULT_MODEL, help="Dense retriever model name.")
     parser.add_argument("--top-k", type=int, default=10, help="Final results retained per query.")
     parser.add_argument("--prefix-budgets", type=int, nargs="+", default=[10, 20, 30, 50])
@@ -75,8 +78,13 @@ def main() -> None:
     args = parse_arguments()
     validate_arguments(args)
 
-    corpus, queries, _ = load_beir_dataset(args.dataset_dir)
-    query_items = list(queries.items())
+    corpus, queries, qrels = load_beir_dataset(args.dataset_dir, qrels_split=args.split)
+    if len(qrels) != TEST_QUERY_COUNT:
+        raise ValueError(f"Expected {TEST_QUERY_COUNT} SciFact test queries, found {len(qrels)}")
+    missing_queries = set(qrels) - set(queries)
+    if missing_queries:
+        raise ValueError(f"Test qrels refer to query IDs absent from queries.jsonl: {sorted(missing_queries)}")
+    query_items = [(query_id, queries[query_id]) for query_id in qrels]
     if args.queries:
         query_items = query_items[: args.queries]
 
@@ -132,7 +140,10 @@ def main() -> None:
                     "latency_ce_seconds": reranker.last_latency_ce_seconds,
                 }
             )
-            random_results = rerank_random(query, candidates, budget, reranker, seed=args.seed, top_k=args.top_k)
+            random_results = rerank_random(
+                query, candidates, budget, reranker, seed=args.seed,
+                top_k=args.top_k, query_id=str(query_id),
+            )
             methods[f"random_{budget}"]["predictions"].append(
                 {
                     "query_id": str(query_id),
@@ -143,11 +154,36 @@ def main() -> None:
                 }
             )
 
+    method_configs = {
+        "full_rerank": {"K": CANDIDATE_POOL_SIZE, "method": "Full Rerank"},
+        **{
+            name: {"K": budget, "method": "Fixed Prefix" if name.startswith("fixed_prefix_") else "Random Selection"}
+            for budget in args.prefix_budgets
+            for name in (f"fixed_prefix_{budget}", f"random_{budget}")
+        },
+    }
     output = {
         "dataset": "scifact",
+        "split": args.split,
+        "num_queries": len(query_items),
         "candidate_pool_size": CANDIDATE_POOL_SIZE,
         "top_k": args.top_k,
         "seed": args.seed,
+        "metadata": {
+            "dataset": "SciFact",
+            "split": args.split,
+            "num_queries": len(query_items),
+            "candidate_pool_size": CANDIDATE_POOL_SIZE,
+            "retrieval_method": "BM25 + Dense + RRF",
+            "dense_model": args.model,
+            "reranker_model": DEFAULT_MODEL_NAME,
+            "device": {
+                "dense": str(getattr(dense._model, "device", "auto")),
+                "reranker": str(getattr(getattr(reranker._model, "model", None), "device", "auto")),
+            },
+            "random_seed": args.seed,
+            "methods": method_configs,
+        },
         "methods": methods,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

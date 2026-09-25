@@ -95,6 +95,17 @@ class RerankingBaselineTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(len({candidate["id"] for candidate in first}), 20)
 
+    def test_random_selection_is_deterministic_per_query(self) -> None:
+        candidates = [{"id": str(index)} for index in range(100)]
+        first = select_random(candidates, 20, seed=7, query_id="q1")
+        repeated = select_random(candidates, 20, seed=7, query_id="q1")
+        other_query = select_random(candidates, 20, seed=7, query_id="q2")
+
+        self.assertEqual(first, repeated)
+        self.assertNotEqual({item["id"] for item in first}, {item["id"] for item in other_query})
+        self.assertEqual(len(first), 20)
+        self.assertTrue(set(item["id"] for item in first) <= {item["id"] for item in candidates})
+
     def test_random_rerank_only_scores_selected_budget(self) -> None:
         model = FakeCrossEncoder()
         candidates = [{"id": str(index), "text": str(index)} for index in range(100)]
