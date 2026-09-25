@@ -104,5 +104,6 @@ class CrossEncoderReranker:
             result["reranker_score"] = numeric_score
             ranked.append(result)
         ranked.sort(key=lambda candidate: candidate["reranker_score"], reverse=True)
+        results = ranked if limit is None else ranked[:limit]
         self.last_latency_rerank_seconds = time.perf_counter() - rerank_started
-        return ranked if limit is None else ranked[:limit]
+        return results

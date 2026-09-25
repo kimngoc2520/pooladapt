@@ -6,6 +6,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from tqdm import tqdm
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -29,7 +31,7 @@ def main() -> None:
     query_items = list(queries.items())
     if args.queries:
         query_items = query_items[: args.queries]
-    for query_id, query in query_items:
+    for query_id, query in tqdm(query_items, desc="Retrieval", unit="query"):
         pool = fuse_ranked_lists({"bm25": bm25.retrieve(query), "dense": dense.retrieve(query)})
         print(f"query_id={query_id} candidates={len(pool)} ids={[candidate['id'] for candidate in pool[:10]]}")
         print("prefix_sizes=" + repr({budget: len(select(pool, m=budget)) for budget in args.prefix_budgets}))
