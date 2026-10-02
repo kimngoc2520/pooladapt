@@ -38,8 +38,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/scifact"))
     parser.add_argument("--candidate-log", type=Path, default=Path("results/phase2/01_candidate_logging/candidate_features.csv"))
     parser.add_argument("--query-ids", type=Path, default=Path("results/phase2/01_candidate_logging/train_validation_query_ids.csv"))
-    parser.add_argument("--output", type=Path, default=Path("results/phase2/05_baselines/pace_ef_results.csv"))
-    parser.add_argument("--audit-output", type=Path, default=Path("results/phase2/05_baselines/pace_ef_ordering_audit.csv"))
+    parser.add_argument("--output", type=Path, default=Path("results/phase2/06_pace_ef/pace_ef_results.csv"))
+    parser.add_argument("--audit-output", type=Path, default=Path("results/phase2/06_pace_ef/pace_ef_ordering_audit.csv"))
     parser.add_argument("--queries", type=int, default=0, help="Optional development subset for smoke runs.")
     return parser.parse_args()
 
