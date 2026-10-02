@@ -111,7 +111,7 @@ def main():
             f"{row['gap']:.4f}"
         )
 
-    output = Path("results/phase2/04_prefix10_gap_audit.csv")
+    output = Path("results/phase2/04_g1_prefix10_gap_audit/prefix10_gap_audit.csv")
     output.parent.mkdir(parents=True, exist_ok=True)
 
     with output.open("w", encoding="utf-8", newline="") as f:
