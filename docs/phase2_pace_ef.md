@@ -17,8 +17,8 @@ reproduction of full PACE.
 Selection receives candidate lexical factors, RRF scores/ranks, and IDs only.
 Train qrels are loaded separately for evaluation metrics after reranking.
 The runner writes query-level results to
-`results/phase2/06_pace_ef/pace_ef_results.csv` and a separate permutation
-audit to `results/phase2/06_pace_ef/pace_ef_ordering_audit.csv`.
+`results/phase2/08_pace_ef/pace_ef_results.csv` and a separate permutation
+audit to `results/phase2/08_pace_ef/pace_ef_ordering_audit.csv`.
 
 Run with:
 
