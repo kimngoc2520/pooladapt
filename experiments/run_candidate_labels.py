@@ -6,7 +6,7 @@ PROJECT_ROOT=Path(__file__).resolve().parents[1]; sys.path.insert(0,str(PROJECT_
 from src.data import load_beir_dataset
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__); p.add_argument('--dataset-dir',type=Path,default=Path('data/scifact')); p.add_argument('--split',default='test'); p.add_argument('--candidates',type=Path,default=Path('results/phase2/01_candidate_logging/candidate_features.csv')); p.add_argument('--output',type=Path,default=Path('results/phase2/02_oracle/candidate_labels.csv')); a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__); p.add_argument('--dataset-dir',type=Path,default=Path('data/scifact')); p.add_argument('--split',choices=('train','validation','test'),required=True); p.add_argument('--candidates',type=Path,default=Path('results/phase2/01_candidate_logging/candidate_features.csv')); p.add_argument('--output',type=Path,default=Path('results/phase2/02_candidate_labels/candidate_labels.csv')); a=p.parse_args()
     _,_,qrels=load_beir_dataset(a.dataset_dir,a.split); a.output.parent.mkdir(parents=True,exist_ok=True)
     with a.candidates.open(encoding='utf-8-sig',newline='') as f: candidates=list(csv.DictReader(f))
     by_query={}

@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-from src.data import load_beir_inputs
+from src.data import load_beir_dataset
 from src.retrieval import BM25Retriever, DenseRetriever, DEFAULT_MODEL, fuse_ranked_lists
 from src.retrieval.bm25 import tokenize
 
@@ -24,18 +24,17 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--dataset-dir',type=Path,default=Path('data/scifact'))
     p.add_argument('--model',default=DEFAULT_MODEL); p.add_argument('--queries',type=int,default=0)
-    p.add_argument('--query-ids',type=Path,default=Path('results/phase1/per_query_analysis.csv'),help='Phase 1 query_id list; avoids reading qrels in feature extraction.')
+    p.add_argument('--query-ids',type=Path,required=True,help='Explicit TRAIN/VALIDATION query_id CSV; feature extraction never reads qrels.')
     p.add_argument('--output-dir',type=Path,default=Path('results/phase2/01_candidate_logging'))
     args=p.parse_args()
-    corpus, queries = load_beir_inputs(args.dataset_dir)
+    corpus, queries, _ = load_beir_dataset(args.dataset_dir)
     bm25, dense = BM25Retriever(corpus), DenseRetriever(corpus, model_name=args.model)
     query_rows=[]; candidate_rows=[]; pool_rows=[]
-    if args.query_ids.exists():
-        with args.query_ids.open(encoding='utf-8-sig',newline='') as f: ids=[r['query_id'] for r in csv.DictReader(f)]
-        missing=set(ids)-set(queries)
-        if missing: raise ValueError(f'query IDs absent from queries file: {sorted(missing)[:5]}')
-        query_items=[(qid,queries[qid]) for qid in ids]
-    else: query_items=list(queries.items())
+    with args.query_ids.open(encoding='utf-8-sig',newline='') as f: ids=[r['query_id'] for r in csv.DictReader(f)]
+    if len(ids) != len(set(ids)): raise ValueError('query-ids contains duplicate query IDs')
+    missing=set(ids)-set(queries)
+    if missing: raise ValueError(f'query IDs absent from queries file: {sorted(missing)[:5]}')
+    query_items=[(qid,queries[qid]) for qid in ids]
     query_items=query_items[:args.queries or None]
     for qid, query in query_items:
         b=bm25.retrieve(query, N); d=dense.retrieve(query,N)

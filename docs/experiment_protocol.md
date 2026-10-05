@@ -60,7 +60,7 @@ The baseline distinctions are:
 
 - SAGE-SLO: query-level adaptation of how many passages a query needs.
 - PACE: evidence ordering plus adaptive reranking budget.
-- PoolAdapt: candidate-level selection of which candidates inside a large pool are worth reranking.
+- PoolAdapt: candidate-pool-aware query-level adaptation of the RRF-prefix reranking budget.
 
 ## Calibration
 

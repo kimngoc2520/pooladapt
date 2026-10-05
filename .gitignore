@@ -28,7 +28,7 @@ htmlcov/
 Thumbs.db
 
 # Dataset
-data/
+/data/
 !data/.gitkeep
 
 # Large model artifacts
