@@ -48,3 +48,31 @@ logs/
 
 # Agent rules
 .cursorrules
+
+# ==============================
+# PoolAdapt generated artifacts
+# ==============================
+
+# Phase 2 trained/frozen checkpoints
+results/phase2/checkpoints/
+
+# Final / intermediate evaluation outputs
+results/phase2/07_evaluation/
+results/phase2/07_evaluation_gpu/
+
+# Generated Kaggle scratch artifacts
+results/phase2/kaggle/
+
+# Prediction journals
+**/test_predictions.jsonl
+
+# Hugging Face / model caches
+**/hf_cache/
+
+# Python environments / caches
+.venv/
+venv/
+phase2-venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
