@@ -98,6 +98,23 @@ def git_output(*arguments: str) -> str:
     return result.stdout.strip()
 
 
+def git_blob_sha256(path: Path, revision: str = 'HEAD') -> str:
+    """Hash exact bytes from a Git blob, independent of checkout line endings."""
+    relative = path.relative_to(ROOT).as_posix()
+    blob = git_output('rev-parse', f'{revision}:{relative}')
+    result = subprocess.run(('git', 'cat-file', 'blob', blob), cwd=ROOT, check=True,
+                            capture_output=True)
+    return hashlib.sha256(result.stdout).hexdigest()
+
+
+def validate_current_git_blob(path: Path) -> None:
+    """Require a tracked artifact to match its canonical Git blob."""
+    relative = path.relative_to(ROOT).as_posix()
+    expected = git_output('rev-parse', f'HEAD:{relative}')
+    actual = git_output('hash-object', '--path=' + relative, str(path))
+    require(actual == expected, path, 'working-tree bytes differ after Git canonicalization')
+
+
 def validate_reviewed_source_manifest(manifest: dict[str, Any], reviewed_commit: str) -> dict[str, Any]:
     """Require exact reviewed-commit blobs, independent of line endings."""
     require(manifest.get('reviewed_commit') == reviewed_commit,
@@ -132,7 +149,8 @@ def validate_provenance_amendment(lock: dict[str, Any]) -> None:
     projection_digest = canonical_json_digest(decision_projection(lock))
     if amendment.get('decision_state_projection_sha256') != projection_digest:
         raise ValueError('decision-bearing configuration projection differs')
-    manifest_digest = sha256(REVIEWED_SOURCE_MANIFEST)
+    validate_current_git_blob(REVIEWED_SOURCE_MANIFEST)
+    manifest_digest = git_blob_sha256(REVIEWED_SOURCE_MANIFEST)
     if amendment.get('reviewed_source_manifest_sha256') != manifest_digest:
         raise ValueError('provenance amendment source manifest differs')
     validate_reviewed_source_manifest(read_json(REVIEWED_SOURCE_MANIFEST), reviewed_commit)
@@ -427,7 +445,7 @@ def test_run(args: argparse.Namespace) -> None:
                          calibration_sha256=FROZEN_CALIBRATION_SHA256,
                          provenance_amendment_sha256=sha256(PROVENANCE_AMENDMENT),
                          reviewed_execution_commit=amendment['reviewed_execution_commit'],
-                         reviewed_source_manifest_sha256=sha256(REVIEWED_SOURCE_MANIFEST),
+                         reviewed_source_manifest_sha256=git_blob_sha256(REVIEWED_SOURCE_MANIFEST),
                          decision_state_projection_sha256=canonical_json_digest(decision_projection(lock)),
                          phase1_sha256=phase1_hashes(),
                          environment=execution_versions(), requested_device=device,

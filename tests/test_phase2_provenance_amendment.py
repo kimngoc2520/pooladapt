@@ -98,8 +98,9 @@ class ProvenanceAmendmentTests(unittest.TestCase):
         stack.enter_context(patch.object(runner, 'REVIEWED_SOURCE_MANIFEST', self.manifest_path))
         stack.enter_context(patch.object(runner, 'FROZEN_LOCK_SHA256', 'lock-hash'))
         stack.enter_context(patch.object(runner, 'FROZEN_CALIBRATION_SHA256', 'calibration-hash'))
+        stack.enter_context(patch.object(runner, 'git_blob_sha256', return_value=runner.sha256(self.manifest_path)))
         stack.enter_context(patch.object(runner, 'git_output', side_effect=[
-            'blob-id', 'blob-id', self.reviewed_commit,
+            'manifest-blob', 'manifest-blob', 'blob-id', 'blob-id', self.reviewed_commit,
             'head ' + self.reviewed_commit, '']))
         return stack
 
@@ -113,7 +114,7 @@ class ProvenanceAmendmentTests(unittest.TestCase):
     def test_wrong_git_commit_fails(self):
         with self.patched() as stack:
             stack.enter_context(patch.object(runner, 'git_output', side_effect=[
-                'blob-id', 'blob-id', 'wrong', 'head wrong']))
+                'manifest-blob', 'manifest-blob', 'blob-id', 'blob-id', 'wrong', 'head wrong']))
             with self.assertRaisesRegex(ValueError, 'provenance freeze commit'):
                 runner.validate_provenance_amendment(self.lock)
 
@@ -142,6 +143,12 @@ class ProvenanceAmendmentTests(unittest.TestCase):
     def test_line_endings_do_not_change_git_blob_check(self):
         self.source.write_bytes(b'print("reviewed")\r\n')
         self.validate()
+
+    def test_manifest_line_endings_use_git_blob_digest(self):
+        self.manifest_path.write_bytes(self.manifest_path.read_bytes().replace(b'\n', b'\r\n'))
+        with self.patched() as stack:
+            stack.enter_context(patch.object(runner, 'git_blob_sha256', return_value=self.manifest_digest))
+            runner.validate_provenance_amendment(self.lock)
 
     def test_frozen_input_and_phase1_drift_fail(self):
         cases = ['checkpoint', 'checkpoint_metadata', 'calibration', 'dataset', 'gate',
