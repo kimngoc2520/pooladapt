@@ -70,7 +70,38 @@ inspection of its existing policy, rather than an invented implementation.
 model, data, source, split, configuration, and Phase 1 hashes. It cannot be
 overwritten by calibration. The summary records CALIBRATED_TEST_PENDING.
 
+### Provenance amendment
+
+The original lock remains unchanged historical provenance. Its SHA-256 is
+`fe1a76073021fd913148c2429eedf37e322220de99febf1a05ea1e828a89048c`; the
+frozen calibration remains pinned by
+`abdd419d36854f9b70608282b1172caae21424dd1e3bf9c4798b6f3595389738`.
+[`provenance_amendment.json`](../results/phase2/07_evaluation/provenance_amendment.json)
+separates the experimental-decision freeze from execution provenance. The
+reviewed execution source is pinned to the Stage A implementation commit
+recorded in the amendment, with every Python source
+dependency under `src/` and `experiments/` recorded by exact Git blob bytes in
+[`reviewed_source_manifest.json`](../results/phase2/07_evaluation/reviewed_source_manifest.json).
+
+The exact historical frozen `src/reranking/cross_encoder.py` bytes were not
+recoverable, so byte identity is not claimed. The review found no intentional
+scientific behavior change: **The reviewed GPU implementation changes
+execution infrastructure but does not change the frozen experimental decision
+state or evaluation semantics.** CPU and CUDA floating-point values, including
+near-tie rankings, are not claimed byte-identical.
+
 ## Final TEST stage
+
+Run the amended read-only preflight first:
+
+```powershell
+python experiments/preflight_phase2_test.py --dataset-dir data/scifact --output-dir results/phase2/07_evaluation_gpu
+```
+
+It must end with `PHASE 2 PREFLIGHT: PASS`. It verifies the historical lock,
+non-source artifacts, decision projection, Phase 1 artifacts, reviewed commit
+and source manifest, checkpoints, and CUDA model loading without TEST
+retrieval, selection, reranking, or quality evaluation.
 
 ```powershell
 python experiments/run_phase2_evaluation.py test

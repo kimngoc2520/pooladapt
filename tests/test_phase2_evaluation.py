@@ -182,10 +182,14 @@ class ReportingTests(unittest.TestCase):
             root = Path(temp)
             input_path = root / 'model.pkl'; input_path.write_bytes(b'frozen')
             lock_path = root / 'lock.json'; lock_path.write_text('{}')
+            calibration_path = root / 'budget_calibration.csv'; calibration_path.write_bytes(b'calibration')
             summary_path = root / 'summary.json'
-            summary_path.write_text(json.dumps({'locked_configuration_sha256': sha256(lock_path)}))
             lock = dict(locked=True, input_sha256={str(input_path): sha256(input_path)}, phase1_sha256={'frozen': 'digest'}, random_seeds=list(SEEDS), test_ids=[str(i) for i in range(300)])
-            with patch.object(runner, 'LOCK', lock_path), patch.object(runner, 'SUMMARY', summary_path), patch.object(runner, 'phase1_hashes', return_value={'frozen': 'digest'}):
+            with patch.object(runner, 'LOCK', lock_path), patch.object(runner, 'SUMMARY', summary_path), \
+                 patch.object(runner, 'FROZEN_LOCK_SHA256', sha256(lock_path)), \
+                 patch.object(runner, 'FROZEN_CALIBRATION_SHA256', sha256(calibration_path)), \
+                 patch.object(runner, 'validate_provenance_amendment'), \
+                 patch.object(runner, 'phase1_hashes', return_value={'frozen': 'digest'}):
                 runner.validate_lock(lock)
                 self.assertEqual(input_path.read_bytes(), b'frozen')
                 input_path.write_bytes(b'changed')
@@ -195,8 +199,11 @@ class ReportingTests(unittest.TestCase):
                 lock_path.write_text('{"lambda": 9}')
                 with self.assertRaises(ValueError):
                     runner.validate_lock(lock)
-            summary_path.write_text(json.dumps({'locked_configuration_sha256': sha256(lock_path)}))
-            with patch.object(runner, 'LOCK', lock_path), patch.object(runner, 'SUMMARY', summary_path), patch.object(runner, 'phase1_hashes', return_value={'frozen': 'changed'}):
+            with patch.object(runner, 'LOCK', lock_path), patch.object(runner, 'SUMMARY', summary_path), \
+                 patch.object(runner, 'FROZEN_LOCK_SHA256', sha256(lock_path)), \
+                 patch.object(runner, 'FROZEN_CALIBRATION_SHA256', sha256(calibration_path)), \
+                 patch.object(runner, 'validate_provenance_amendment'), \
+                 patch.object(runner, 'phase1_hashes', return_value={'frozen': 'changed'}):
                 with self.assertRaises(ValueError):
                     runner.validate_lock(lock)
 

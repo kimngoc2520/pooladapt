@@ -3,10 +3,13 @@
 GitHub branch `mth/phrase2` supplies source code, tests and documentation.
 Kaggle Input supplies data, fitted checkpoints and frozen experiment artifacts.
 Copy artifacts into their normal repository-relative paths and run the evaluator
-directly. No packaging or extraction step is required.
+directly. No packaging or extraction step is required. The complete runtime audit
+and exact 29-file checklist are in [phase2_dependency_audit.md](phase2_dependency_audit.md)
+and [phase2_required_files.txt](phase2_required_files.txt).
 
-The scientific protocol remains frozen. Do not run training, persistence,
-preflight or calibration stages. Features, targets, seeds, hyperparameters,
+The scientific protocol remains frozen. Do not run training, persistence or the
+evaluator's historical `preflight`/`calibrate` stages. Use the read-only readiness
+script below. Features, targets, seeds, hyperparameters,
 T/lambda, selection, aggregation and statistics remain unchanged.
 G2=FAILED, G3a=NOT_EVALUATED, G3b=NOT_EVALUATED; no heuristic is reconstructed.
 
@@ -60,19 +63,9 @@ uv pip install --python /kaggle/working/phase2-venv/bin/python \
   tokenizers==0.23.2 huggingface-hub==1.32.0 safetensors==0.8.0 \
   joblib==1.6.0 threadpoolctl==3.7.0 tqdm==4.70.1
 
-/kaggle/working/phase2-venv/bin/python - <<'PY'
-import torch
-from experiments.run_phase2_evaluation import LOCK, read_json, validate_lock
-from src.reranking.cross_encoder import CrossEncoderReranker
-assert torch.cuda.is_available(), 'CUDA unavailable; CPU fallback is forbidden'
-print('torch:', torch.__version__, 'CUDA runtime:', torch.version.cuda)
-print('CUDA GPU:', torch.cuda.get_device_name(0))
-lock = read_json(LOCK)
-validate_lock(lock)
-reranker = CrossEncoderReranker(model_name=lock['cross_encoder_model'], device='cuda')
-reranker.warm_up()
-print('Effective CrossEncoder device:', reranker.effective_device)
-PY
+/kaggle/working/phase2-venv/bin/python -u experiments/preflight_phase2_test.py \
+  --dataset-dir data/scifact \
+  --output-dir results/phase2/07_evaluation_gpu
 ```
 
 This verifies frozen inputs and performs an empty untimed warm-up; no TEST
@@ -101,11 +94,22 @@ mkdir -p results/phase2/07_evaluation_gpu
 ```
 
 The evaluator resolves original Windows/Linux locked paths against the clone.
-Scientific artifacts still require exact original bytes. Git source line-ending
-conversion is accepted without accepting source content changes. The two
-authorized device/output/resume implementation files use current source digests
-in the execution journal; all other originally locked source contents must
-match. The validation lock and calibration are never rewritten.
+Scientific artifacts still require exact original bytes. The historical source
+hashes in the original lock are retained as provenance, while current
+execution source is validated against
+`results/phase2/07_evaluation/reviewed_source_manifest.json`: HEAD must be
+the reviewed implementation commit recorded in the amendment, every required
+path must exist, and both its canonical Git bytes and Git blob identity must
+match. No line-ending
+normalization is used. The validation lock and calibration are never rewritten.
+The exact historical frozen `cross_encoder.py` bytes are unrecoverable and are
+not claimed byte-identical.
+
+The amendment separates experimental-decision freeze from execution
+provenance. **The reviewed GPU implementation changes execution infrastructure
+but does not change the frozen experimental decision state or evaluation
+semantics.** CPU-vs-GPU floating-point differences can affect numerical
+near-ties; byte-identical scores or rankings are not claimed.
 
 Loading and warm-up remain outside latency measurements. CE timing measures
 `predict(pairs)`; reranking includes preparation, inference and sorting. CUDA
@@ -135,9 +139,10 @@ Canonical key: `(query_id, method, target_budget, seed)`. Complete keys are
 skipped; duplicate, foreign and corrupt records fail. Every append is flushed
 and fsynced. Torn final records are preserved before safe tail recovery.
 `execution_manifest.json` binds actual GPU/device/CUDA runtime, runtime versions,
-current source hashes, frozen input hashes, lock, calibration and Phase 1 hashes
-for the same run. CPU records cannot be imported. Resume can finish interrupted
-aggregation; a COMPLETE run is refused.
+the original lock and calibration hashes, the provenance amendment, reviewed
+commit/source-manifest hashes, the decision projection, frozen input hashes,
+and Phase 1 hashes for the same run. CPU records cannot be imported. Resume can
+finish interrupted aggregation; a COMPLETE run is refused.
 
 ## Outputs and monitoring
 

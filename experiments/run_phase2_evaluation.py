@@ -13,6 +13,7 @@ import importlib.metadata
 import json
 import os
 import platform
+import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -47,12 +48,104 @@ LOCK = OUT / 'locked_configurations.json'
 # Trusted digests of the existing frozen SciFact calibration, not a packaging manifest.
 FROZEN_LOCK_SHA256 = 'fe1a76073021fd913148c2429eedf37e322220de99febf1a05ea1e828a89048c'
 FROZEN_CALIBRATION_SHA256 = 'abdd419d36854f9b70608282b1172caae21424dd1e3bf9c4798b6f3595389738'
-EXECUTION_SOURCE_FILES = {'src/reranking/cross_encoder.py', 'experiments/run_phase2_evaluation.py'}
+PROVENANCE_AMENDMENT = OUT / 'provenance_amendment.json'
+REVIEWED_SOURCE_MANIFEST = OUT / 'reviewed_source_manifest.json'
 
 
 def read_json(path: Path) -> dict[str, Any]:
     """Read a UTF-8 JSON artifact."""
     return json.loads(path.read_text(encoding='utf-8'))
+
+
+def require(condition: bool, artifact: Path | str, detail: str) -> None:
+    """Fail closed with the artifact responsible for a provenance mismatch."""
+    if not condition:
+        raise ValueError(f'{artifact}: {detail}')
+
+
+def canonical_json_digest(value: Any) -> str:
+    """Hash a stable JSON projection without platform or formatting effects."""
+    payload = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def decision_projection(lock: dict[str, Any]) -> dict[str, Any]:
+    """Return only immutable experimental-decision state from the historical lock."""
+    return {
+        'checkpoint_information': lock['checkpoint_information'],
+        'models': lock['models'],
+        'configurations': lock['configurations'],
+        'candidate_pool_size': lock['candidate_pool_size'],
+        'budget_grid': lock['budget_grid'],
+        'target_budgets': lock['target_budgets'],
+        'calibration_tolerance': lock['calibration_tolerance'],
+        'gates': lock['gates'],
+        'cross_encoder_model': lock['cross_encoder_model'],
+        'dense_model': lock['dense_model'],
+        'cross_encoder_configuration': lock['cross_encoder_configuration'],
+        'random_seeds': lock['random_seeds'],
+        'test_ids': lock['test_ids'],
+        'metrics': list(METRICS),
+        'statistical_protocol': lock['statistical_protocol'],
+        'test_used_for_calibration': lock['test_used_for_calibration'],
+    }
+
+
+def git_output(*arguments: str) -> str:
+    """Run a read-only Git query and fail closed on repository ambiguity."""
+    result = subprocess.run(('git', *arguments), cwd=ROOT, check=True,
+                            capture_output=True, text=True)
+    return result.stdout.strip()
+
+
+def validate_reviewed_source_manifest(manifest: dict[str, Any], reviewed_commit: str) -> dict[str, Any]:
+    """Require exact reviewed-commit blobs, independent of line endings."""
+    require(manifest.get('reviewed_commit') == reviewed_commit,
+            REVIEWED_SOURCE_MANIFEST, 'reviewed commit differs')
+    files = manifest.get('files')
+    require(isinstance(files, list) and files, REVIEWED_SOURCE_MANIFEST, 'source manifest is empty')
+    for entry in files:
+        path = entry.get('path')
+        require(isinstance(path, str) and path.startswith(('src/', 'experiments/')),
+                REVIEWED_SOURCE_MANIFEST, f'invalid source path: {path}')
+        current = ROOT / path
+        require(current.is_file(), current, 'required reviewed source is missing')
+        require(git_output('hash-object', '--path=' + path, str(current)) == entry.get('blob'),
+                current, 'reviewed source bytes differ after Git canonicalization')
+        require(git_output('rev-parse', f'{reviewed_commit}:{path}') == entry.get('blob'),
+                current, 'reviewed Git blob differs')
+    return manifest
+
+
+def validate_provenance_amendment(lock: dict[str, Any]) -> None:
+    """Validate the amendment and its immutable decision-state projection."""
+    require(PROVENANCE_AMENDMENT.is_file(), PROVENANCE_AMENDMENT, 'missing provenance amendment')
+    require(REVIEWED_SOURCE_MANIFEST.is_file(), REVIEWED_SOURCE_MANIFEST, 'missing reviewed source manifest')
+    amendment = read_json(PROVENANCE_AMENDMENT)
+    require(amendment.get('status') == 'finalized / reviewed',
+            PROVENANCE_AMENDMENT, 'provenance amendment is pending')
+    if amendment.get('original_lock_sha256') != FROZEN_LOCK_SHA256 or amendment.get('calibration_sha256') != FROZEN_CALIBRATION_SHA256:
+        raise ValueError('provenance amendment does not pin the historical lock/calibration')
+    reviewed_commit = amendment.get('reviewed_execution_commit')
+    require(isinstance(reviewed_commit, str) and len(reviewed_commit) == 40,
+            PROVENANCE_AMENDMENT, 'invalid reviewed implementation commit')
+    projection_digest = canonical_json_digest(decision_projection(lock))
+    if amendment.get('decision_state_projection_sha256') != projection_digest:
+        raise ValueError('decision-bearing configuration projection differs')
+    manifest_digest = sha256(REVIEWED_SOURCE_MANIFEST)
+    if amendment.get('reviewed_source_manifest_sha256') != manifest_digest:
+        raise ValueError('provenance amendment source manifest differs')
+    validate_reviewed_source_manifest(read_json(REVIEWED_SOURCE_MANIFEST), reviewed_commit)
+    head = git_output('rev-parse', 'HEAD')
+    parents = git_output('rev-list', '--parents', '-n', '1', head).split()
+    require(len(parents) == 2 and parents[1] == reviewed_commit,
+            'git', 'HEAD must be the provenance freeze commit whose parent is reviewed implementation commit')
+    changed = git_output('diff-tree', '--no-commit-id', '--name-only', '-r', head).splitlines()
+    allowed = {
+        'results/phase2/07_evaluation/provenance_amendment.json',
+        'results/phase2/07_evaluation/reviewed_source_manifest.json',
+    }
+    require(set(changed) <= allowed, 'git', 'provenance freeze commit changed non-provenance files')
 
 
 def phase1_hashes() -> dict[str, str]:
@@ -254,28 +347,21 @@ def protocol_notes() -> list[str]:
 
 def validate_lock(lock: dict[str, Any]) -> None:
     """Fail closed if parameters, inputs, source, or frozen Phase 1 changed."""
-    expected = FROZEN_LOCK_SHA256 if lock.get('dataset') == 'SciFact' or not SUMMARY.exists() else read_json(SUMMARY)['locked_configuration_sha256']
-    if not lock.get('locked') or expected != sha256(LOCK):
+    if not lock.get('locked') or sha256(LOCK) != FROZEN_LOCK_SHA256:
         raise ValueError('configuration lock was modified')
-    if expected == FROZEN_LOCK_SHA256:
-        if sha256(LOCK.with_name('budget_calibration.csv')) != FROZEN_CALIBRATION_SHA256:
-            raise ValueError('frozen budget calibration changed')
+    calibration = LOCK.with_name('budget_calibration.csv')
+    if sha256(calibration) != FROZEN_CALIBRATION_SHA256:
+        raise ValueError('frozen budget calibration changed')
+    validate_provenance_amendment(lock)
     for original, digest in lock['input_sha256'].items():
         path = locked_path(original, lock['dataset_dir'], ROOT) if lock.get('dataset_dir') else Path(original)
-        current = sha256(path)
-        relative = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else str(path)
-        if relative in EXECUTION_SOURCE_FILES:
-            # Authorized device/output/resume infrastructure updates. Exact current
-            # source digests are bound to the execution journal, not the old CPU code.
+        relative = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else ''
+        if relative.startswith(('src/', 'experiments/')):
+            # Historical source hashes are retained in the original lock. The
+            # reviewed source manifest above is the authoritative current code.
             continue
+        current = sha256(path)
         if current != digest:
-            # Git checkout may convert source line endings; scientific artifacts
-            # always require the exact original bytes.
-            if path.suffix == '.py':
-                normalized = path.read_bytes().replace(b'\r\n', b'\n')
-                variants = (normalized, normalized.replace(b'\n', b'\r\n'))
-                if any(hashlib.sha256(value).hexdigest() == digest for value in variants):
-                    continue
             raise ValueError(f'locked input changed: {original}')
     normalize_paths = lambda mapping: {key.replace('\\', '/'): value for key, value in mapping.items()}
     if normalize_paths(phase1_hashes()) != normalize_paths(lock['phase1_sha256']):
@@ -333,15 +419,22 @@ def test_run(args: argparse.Namespace) -> None:
     journal = None
     if isolated:
         import torch
+        source_manifest = read_json(REVIEWED_SOURCE_MANIFEST)
+        amendment = read_json(PROVENANCE_AMENDMENT)
         execution = dict(lock_sha256=sha256(LOCK),
+                         original_lock_sha256=FROZEN_LOCK_SHA256,
                          input_sha256={locked_path(path, lock['dataset_dir'], ROOT).relative_to(ROOT).as_posix(): sha256(locked_path(path, lock['dataset_dir'], ROOT)) for path in lock.get('input_sha256', {})},
-                         calibration_sha256=sha256(LOCK.with_name('budget_calibration.csv')) if LOCK.with_name('budget_calibration.csv').exists() else None,
+                         calibration_sha256=FROZEN_CALIBRATION_SHA256,
+                         provenance_amendment_sha256=sha256(PROVENANCE_AMENDMENT),
+                         reviewed_execution_commit=amendment['reviewed_execution_commit'],
+                         reviewed_source_manifest_sha256=sha256(REVIEWED_SOURCE_MANIFEST),
+                         decision_state_projection_sha256=canonical_json_digest(decision_projection(lock)),
                          phase1_sha256=phase1_hashes(),
                          environment=execution_versions(), requested_device=device,
                          effective_cross_encoder_device=reranker.effective_device,
                          gpu_name=torch.cuda.get_device_name(0) if reranker.effective_device.startswith('cuda') else None,
                          cuda_runtime=torch.version.cuda,
-                         source_sha256={str(p.relative_to(ROOT)).replace('\\', '/'): sha256(p) for directory in ('src', 'experiments') for p in sorted((ROOT / directory).rglob('*.py'))},
+                         source_manifest_files=len(source_manifest['files']),
                          timing=lock.get('timing'), cuda_synchronization='before reranking, before and after predict; warm-up drained outside timers')
         journal = PredictionJournal(predictions_path, execution, expected_keys(lock), resume=resume)
         print(f'GPU journal: {predictions_path}; completed records: {len(journal.rows)}/{len(journal.allowed)}', flush=True)
