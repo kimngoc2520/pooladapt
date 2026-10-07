@@ -2271,10 +2271,10 @@
   "original_lock_path": "results/phase2/07_evaluation/locked_configurations.json",
   "original_lock_precedes_reviewed_commit": true,
   "original_lock_sha256": "fe1a76073021fd913148c2429eedf37e322220de99febf1a05ea1e828a89048c",
-  "reviewed_execution_commit": "eb57b9c6cbb8671f2dce09b4819119af7a4be3b8",
+  "reviewed_execution_commit": "415d4728e0f4cc484e3cfa0559875e743542e522",
   "reviewed_source_manifest_path": "results/phase2/07_evaluation/reviewed_source_manifest.json",
   "reviewed_source_manifest_schema": "pooladapt.reviewed-source-manifest.v2",
-  "reviewed_source_manifest_sha256": "21331f3c07212af2231b293e6b02140bf0f7a7fd0153d280eae7f4c16f485a10",
+  "reviewed_source_manifest_sha256": "c74244c2fa1f38f1ad93cf1b3f61fad77215d8988e5dd8570a667a9f4684a15e",
   "schema": "pooladapt.provenance-amendment.v1",
   "status": "finalized / reviewed"
 }
