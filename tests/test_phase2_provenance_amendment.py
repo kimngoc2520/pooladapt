@@ -16,7 +16,7 @@ class ProvenanceAmendmentTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.out = self.root / 'results/phase2/07_evaluation'
+        self.out = self.root / 'results/phase2/evaluation'
         self.out.mkdir(parents=True)
         self.dataset = self.root / 'data/scifact'
         self.dataset.mkdir(parents=True)
@@ -110,6 +110,75 @@ class ProvenanceAmendmentTests(unittest.TestCase):
 
     def test_correct_reviewed_source_passes(self):
         self.validate()
+
+    def test_migration_amendment_requires_authenticated_historical_identity(self):
+        expected = {'provenance_freeze_commit': 'f' * 40}
+        amendment = json.loads(self.amendment_path.read_text())
+        amendment.update(schema='pooladapt.provenance-amendment.v2',
+                         scope='post-run path migration', historical_execution=expected)
+        self.amendment_path.write_text(json.dumps(amendment), encoding='utf-8')
+        with self.patched() as stack:
+            stack.enter_context(patch.object(runner, 'historical_execution_provenance', return_value=expected))
+            runner.validate_provenance_amendment(self.lock)
+        amendment['historical_execution'] = {'provenance_freeze_commit': 'wrong'}
+        self.amendment_path.write_text(json.dumps(amendment), encoding='utf-8')
+        with self.patched() as stack:
+            stack.enter_context(patch.object(runner, 'historical_execution_provenance', return_value=expected))
+            with self.assertRaisesRegex(ValueError, 'historical execution identity differs'):
+                runner.validate_provenance_amendment(self.lock)
+
+    def test_historical_identity_uses_original_git_objects_not_current_source(self):
+        freeze = 'f' * 40
+        manifest_bytes = self.manifest_path.read_bytes()
+        amendment_bytes = self.amendment_path.read_bytes()
+        source_digest = runner.sha256(self.source)
+        self.source.unlink()  # Current files are irrelevant to historical Git evidence.
+
+        def historical_git(*arguments):
+            if arguments == ('merge-base', '--is-ancestor', freeze, 'HEAD'):
+                return ''
+            if arguments == ('rev-list', '--parents', '-n', '1', freeze):
+                return freeze + ' ' + self.reviewed_commit
+            if arguments == ('diff-tree', '--no-commit-id', '--name-only', '-r', freeze):
+                return 'results/phase2/07_evaluation/provenance_amendment.json'
+            if arguments == ('rev-parse', self.reviewed_commit + ':src/example.py'):
+                return 'blob-id'
+            raise AssertionError(f'unexpected Git query: {arguments}')
+
+        with self.patched() as stack:
+            stack.enter_context(patch.object(runner, 'HISTORICAL_GPU_FREEZE', freeze))
+            stack.enter_context(patch.object(runner, 'HISTORICAL_GPU_REVIEW', self.reviewed_commit))
+            stack.enter_context(patch.object(runner, 'git_output', side_effect=historical_git))
+            stack.enter_context(patch.object(runner, 'git_blob_bytes', side_effect=lambda path, revision:
+                amendment_bytes if path.name == 'provenance_amendment.json' else manifest_bytes))
+            digest = stack.enter_context(patch.object(runner, 'git_blob_sha256', return_value=source_digest))
+            evidence = runner.historical_execution_provenance(self.lock)
+            self.assertEqual(evidence['reviewed_execution_commit'], self.reviewed_commit)
+            self.assertEqual(evidence['provenance_amendment_sha256'], hashlib.sha256(amendment_bytes).hexdigest())
+            digest.assert_called_once_with(self.source, self.reviewed_commit)
+            digest.return_value = 'different-source-digest'
+            with self.assertRaisesRegex(ValueError, 'historical source SHA256 differs'):
+                runner.historical_execution_provenance(self.lock)
+
+    def test_freeze_commit_allows_only_relocated_provenance_paths(self):
+        changed = '\n'.join((
+            'results/phase2/evaluation/provenance_amendment.json',
+            'results/phase2/evaluation/reviewed_source_manifest.json'))
+        with self.patched() as stack:
+            stack.enter_context(patch.object(runner, 'git_output', side_effect=[
+                'manifest-blob', 'manifest-blob', 'blob-id', 'blob-id', 'head',
+                'head ' + self.reviewed_commit, changed]))
+            runner.validate_provenance_amendment(self.lock)
+
+    def test_freeze_commit_rejects_legacy_paths_and_source_changes(self):
+        for changed in ('results/phase2/07_evaluation/reviewed_source_manifest.json',
+                        'experiments/run_phase2_evaluation.py'):
+            with self.subTest(changed=changed), self.patched() as stack:
+                stack.enter_context(patch.object(runner, 'git_output', side_effect=[
+                    'manifest-blob', 'manifest-blob', 'blob-id', 'blob-id', 'head',
+                    'head ' + self.reviewed_commit, changed]))
+                with self.assertRaisesRegex(ValueError, 'changed non-provenance files'):
+                    runner.validate_provenance_amendment(self.lock)
 
     def test_wrong_git_commit_fails(self):
         with self.patched() as stack:

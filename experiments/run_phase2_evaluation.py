@@ -42,14 +42,20 @@ from src.pooladapt.checkpoints import load_checkpoint, metadata_path, pipeline_c
 from src.reranking.cross_encoder import CrossEncoderReranker, DEFAULT_MODEL_NAME
 from src.retrieval import BM25Retriever, DenseRetriever, DEFAULT_MODEL, fuse_ranked_lists
 
-OUT = ROOT / 'results/phase2/07_evaluation'
-SUMMARY = ROOT / 'results/phase2/phase2_summary.json'
+OUT = ROOT / 'results/phase2/evaluation'
+SUMMARY = OUT / 'stage_summary.json'
+# Separate legacy stage status from the completed GPU summary.
+# Isolated GPU TEST writes its own summary inside the explicit output directory.
 LOCK = OUT / 'locked_configurations.json'
 # Trusted digests of the existing frozen SciFact calibration, not a packaging manifest.
 FROZEN_LOCK_SHA256 = 'fe1a76073021fd913148c2429eedf37e322220de99febf1a05ea1e828a89048c'
 FROZEN_CALIBRATION_SHA256 = 'abdd419d36854f9b70608282b1172caae21424dd1e3bf9c4798b6f3595389738'
 PROVENANCE_AMENDMENT = OUT / 'provenance_amendment.json'
 REVIEWED_SOURCE_MANIFEST = OUT / 'reviewed_source_manifest.json'
+# Immutable Git evidence for the completed Kaggle run, not current source pins.
+HISTORICAL_GPU_FREEZE = '158ba388cbef7016fb2f07d7cc990d40d2e1e55f'
+HISTORICAL_GPU_REVIEW = '415d4728e0f4cc484e3cfa0559875e743542e522'
+HISTORICAL_PROVENANCE_DIR = 'results/phase2/07_evaluation'
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -98,13 +104,18 @@ def git_output(*arguments: str) -> str:
     return result.stdout.strip()
 
 
-def git_blob_sha256(path: Path, revision: str = 'HEAD') -> str:
-    """Hash exact bytes from a Git blob, independent of checkout line endings."""
+def git_blob_bytes(path: Path, revision: str = 'HEAD') -> bytes:
+    """Read exact Git object bytes without checkout or line-ending conversion."""
     relative = path.relative_to(ROOT).as_posix()
     blob = git_output('rev-parse', f'{revision}:{relative}')
     result = subprocess.run(('git', 'cat-file', 'blob', blob), cwd=ROOT, check=True,
                             capture_output=True)
-    return hashlib.sha256(result.stdout).hexdigest()
+    return result.stdout
+
+
+def git_blob_sha256(path: Path, revision: str = 'HEAD') -> str:
+    """Hash exact bytes from a Git blob, independent of checkout line endings."""
+    return hashlib.sha256(git_blob_bytes(path, revision)).hexdigest()
 
 
 def validate_current_git_blob(path: Path) -> None:
@@ -115,7 +126,8 @@ def validate_current_git_blob(path: Path) -> None:
     require(actual == expected, path, 'working-tree bytes differ after Git canonicalization')
 
 
-def validate_reviewed_source_manifest(manifest: dict[str, Any], reviewed_commit: str) -> dict[str, Any]:
+def validate_reviewed_source_manifest(manifest: dict[str, Any], reviewed_commit: str,
+                                     *, check_working_tree: bool = True) -> dict[str, Any]:
     """Require exact reviewed-commit blobs, independent of line endings."""
     require(manifest.get('reviewed_commit') == reviewed_commit,
             REVIEWED_SOURCE_MANIFEST, 'reviewed commit differs')
@@ -126,16 +138,66 @@ def validate_reviewed_source_manifest(manifest: dict[str, Any], reviewed_commit:
         require(isinstance(path, str) and path.startswith(('src/', 'experiments/')),
                 REVIEWED_SOURCE_MANIFEST, f'invalid source path: {path}')
         current = ROOT / path
-        require(current.is_file(), current, 'required reviewed source is missing')
-        require(git_output('hash-object', '--path=' + path, str(current)) == entry.get('blob'),
-                current, 'reviewed source bytes differ after Git canonicalization')
+        require(not Path(path).is_absolute() and '..' not in Path(path).parts,
+                REVIEWED_SOURCE_MANIFEST, f'invalid source path: {path}')
+        if check_working_tree:
+            require(current.is_file(), current, 'required reviewed source is missing')
+            require(git_output('hash-object', '--path=' + path, str(current)) == entry.get('blob'),
+                    current, 'reviewed source bytes differ after Git canonicalization')
         require(git_output('rev-parse', f'{reviewed_commit}:{path}') == entry.get('blob'),
                 current, 'reviewed Git blob differs')
     return manifest
 
 
+def historical_execution_provenance(lock: dict[str, Any]) -> dict[str, Any]:
+    """Authenticate original GPU provenance from its fixed historical Git freeze.
+
+    Historical source is checked against historical Git objects, never against
+    the migrated working tree. Current source must still pass the separate
+    default working-tree and Stage A/B checks in validate_provenance_amendment.
+    """
+    freeze, review = HISTORICAL_GPU_FREEZE, HISTORICAL_GPU_REVIEW
+    git_output('merge-base', '--is-ancestor', freeze, 'HEAD')
+    parents = git_output('rev-list', '--parents', '-n', '1', freeze).split()
+    require(parents == [freeze, review], 'git', 'historical GPU freeze parent differs')
+    amendment_path = ROOT / HISTORICAL_PROVENANCE_DIR / 'provenance_amendment.json'
+    manifest_path = ROOT / HISTORICAL_PROVENANCE_DIR / 'reviewed_source_manifest.json'
+    allowed = {path.relative_to(ROOT).as_posix() for path in (amendment_path, manifest_path)}
+    changed = git_output('diff-tree', '--no-commit-id', '--name-only', '-r', freeze).splitlines()
+    require(set(changed) <= allowed, 'git', 'historical GPU freeze changed non-provenance files')
+    amendment_bytes = git_blob_bytes(amendment_path, freeze)
+    manifest_bytes = git_blob_bytes(manifest_path, freeze)
+    amendment, manifest = json.loads(amendment_bytes), json.loads(manifest_bytes)
+    manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+    projection_digest = canonical_json_digest(decision_projection(lock))
+    require(amendment.get('status') == 'finalized / reviewed'
+            and amendment.get('reviewed_execution_commit') == review
+            and amendment.get('original_lock_sha256') == FROZEN_LOCK_SHA256
+            and amendment.get('calibration_sha256') == FROZEN_CALIBRATION_SHA256
+            and amendment.get('decision_state_projection_sha256') == projection_digest
+            and amendment.get('reviewed_source_manifest_sha256') == manifest_digest,
+            amendment_path, 'historical GPU amendment differs from frozen protocol')
+    validate_reviewed_source_manifest(manifest, review, check_working_tree=False)
+    for entry in manifest['files']:
+        require(git_blob_sha256(ROOT / entry['path'], review) == entry.get('sha256'),
+                manifest_path, f'historical source SHA256 differs: {entry["path"]}')
+    return {
+        'provenance_freeze_commit': freeze,
+        'reviewed_execution_commit': review,
+        'reviewed_source_manifest_sha256': manifest_digest,
+        'provenance_amendment_sha256': hashlib.sha256(amendment_bytes).hexdigest(),
+        'lock_sha256': FROZEN_LOCK_SHA256,
+        'calibration_sha256': FROZEN_CALIBRATION_SHA256,
+        'decision_state_projection_sha256': projection_digest,
+        'source_manifest_files': len(manifest['files']),
+    }
+
+
 def validate_provenance_amendment(lock: dict[str, Any]) -> None:
     """Validate the amendment and its immutable decision-state projection."""
+    # Historical *_path fields in the amendment describe the original freeze.
+    # Locate relocated artifacts using the current constants, but never accept
+    # changed source or a different freeze history merely because paths moved.
     require(PROVENANCE_AMENDMENT.is_file(), PROVENANCE_AMENDMENT, 'missing provenance amendment')
     require(REVIEWED_SOURCE_MANIFEST.is_file(), REVIEWED_SOURCE_MANIFEST, 'missing reviewed source manifest')
     amendment = read_json(PROVENANCE_AMENDMENT)
@@ -159,11 +221,14 @@ def validate_provenance_amendment(lock: dict[str, Any]) -> None:
     require(len(parents) == 2 and parents[1] == reviewed_commit,
             'git', 'HEAD must be the provenance freeze commit whose parent is reviewed implementation commit')
     changed = git_output('diff-tree', '--no-commit-id', '--name-only', '-r', head).splitlines()
-    allowed = {
-        'results/phase2/07_evaluation/provenance_amendment.json',
-        'results/phase2/07_evaluation/reviewed_source_manifest.json',
-    }
+    allowed = {path.relative_to(ROOT).as_posix()
+               for path in (PROVENANCE_AMENDMENT, REVIEWED_SOURCE_MANIFEST)}
     require(set(changed) <= allowed, 'git', 'provenance freeze commit changed non-provenance files')
+    if amendment.get('schema') == 'pooladapt.provenance-amendment.v2':
+        require(amendment.get('scope') == 'post-run path migration',
+                PROVENANCE_AMENDMENT, 'migration amendment scope differs')
+        require(amendment.get('historical_execution') == historical_execution_provenance(lock),
+                PROVENANCE_AMENDMENT, 'historical execution identity differs')
 
 
 def phase1_hashes() -> dict[str, str]:
@@ -545,7 +610,7 @@ def test_run(args: argparse.Namespace) -> None:
     query_rows = [r for rows in groups.values() for r in rows]
     write_csv(output / 'test_query_metrics.csv', query_rows, ('method', 'target_budget', 'seed', 'query_id', *METRICS, 'reranked_pairs', 'reranking_latency'))
     write_csv(output / 'statistical_analysis.csv', statistics, tuple(statistics[0]) if statistics else ('metric', 'p_Holm'))
-    summary = {**lock, 'locked_configuration_sha256': sha256(LOCK)} if isolated else read_json(SUMMARY)
+    summary = {**lock, 'locked_configuration_sha256': sha256(LOCK)}
     summary.update(status='COMPLETE', final_test_results=results, random_seed_results=seeds,
                    statistical_results=statistics, protocol_notes=protocol_notes(),
                    quality_cost_latency_findings=tradeoff_findings(results),

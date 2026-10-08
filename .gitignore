@@ -41,7 +41,13 @@ Thumbs.db
 # Experiment outputs
 outputs/
 runs/
-results/
+results/*
+!results/phase2/
+results/phase2/*
+!results/phase2/evaluation/
+results/phase2/evaluation/*
+!results/phase2/evaluation/reviewed_source_manifest.json
+!results/phase2/evaluation/provenance_amendment.json
 
 # Logs
 logs/
@@ -57,8 +63,7 @@ logs/
 results/phase2/checkpoints/
 
 # Final / intermediate evaluation outputs
-results/phase2/07_evaluation/
-results/phase2/07_evaluation_gpu/
+results/phase2/evaluation/final_gpu/
 
 # Generated Kaggle scratch artifacts
 results/phase2/kaggle/

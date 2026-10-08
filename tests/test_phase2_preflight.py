@@ -27,14 +27,14 @@ class PreflightTests(unittest.TestCase):
                 'results/phase2/checkpoints/sage_slo.pkl',
                 'results/phase2/checkpoints/sage_slo.metadata.json',
                 'results/phase1/baseline_evaluation.csv',
-                'results/phase2/07_evaluation/locked_configurations.json',
-                'results/phase2/07_evaluation/budget_calibration.csv',
-                'results/phase2/07_evaluation/provenance_amendment.json',
-                'results/phase2/07_evaluation/reviewed_source_manifest.json'})
+                'results/phase2/evaluation/locked_configurations.json',
+                'results/phase2/evaluation/budget_calibration.csv',
+                'results/phase2/evaluation/provenance_amendment.json',
+                'results/phase2/evaluation/reviewed_source_manifest.json'})
 
     def test_missing_gate_fails_with_exact_filename_before_fitting_or_loading(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp); directory = root / 'results/phase2/07_evaluation'; directory.mkdir(parents=True)
+            root = Path(tmp); directory = root / 'results/phase2/evaluation'; directory.mkdir(parents=True)
             lock_path = directory / 'locked_configurations.json'
             lock_path.write_text(json.dumps(dict(dataset_dir=r'D:\project\data\scifact',
                 input_sha256={r'D:\project\results\phase2\07_heuristic\heuristic_config.json': 'hash'},
@@ -43,7 +43,7 @@ class PreflightTests(unittest.TestCase):
             with patch.object(preflight, 'ROOT', root), patch.object(preflight.evaluator, 'LOCK', lock_path), \
                  patch.object(preflight.evaluator, 'load_model') as load, patch.object(preflight.evaluator, 'validate_lock') as validate:
                 with self.assertRaisesRegex(ValueError, 'heuristic_config.json: missing required file'):
-                    preflight.audit_inputs(root / 'data/scifact', root / 'results/phase2/07_evaluation_gpu')
+                    preflight.audit_inputs(root / 'data/scifact', root / 'results/phase2/evaluation/final_gpu')
                 load.assert_not_called(); validate.assert_not_called()
 
     def test_duplicate_development_feature_ids_fail_with_artifact_name(self):

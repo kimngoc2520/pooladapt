@@ -126,7 +126,7 @@ class FrozenInputTests(unittest.TestCase):
             source = root / 'src/pooladapt/features.py'; source.parent.mkdir(parents=True); source.write_bytes(b'feature = 1\r\n')
             source_digest = sha256(source); source.write_bytes(b'feature = 1\n')
             infrastructure = root / 'src/reranking/cross_encoder.py'; infrastructure.parent.mkdir(parents=True); infrastructure.write_bytes(b'authorized device support')
-            out = root / 'results/phase2/07_evaluation'; out.mkdir(parents=True)
+            out = root / 'results/phase2/evaluation'; out.mkdir(parents=True)
             calibration = out / 'budget_calibration.csv'; calibration.write_bytes(b'frozen calibration')
             lock_path = out / 'locked_configurations.json'
             environment = dict(python='3.11.15', torch='2.14.0')
@@ -185,7 +185,8 @@ class EvaluatorResumeTests(unittest.TestCase):
                     calibration_status='SUCCESS' if adaptive else 'NOT_REQUIRED', temperature=1 if adaptive else None,
                     budget_bias_lambda=1 if adaptive else None, budget_type='adaptive' if adaptive else 'exact'))
         with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack:
-            root = Path(tmp); old = root / 'cpu'; old.mkdir(); output = root / 'gpu'
+            root = Path(tmp); old = root / 'results/phase2/evaluation'
+            old.mkdir(parents=True); output = old / 'final_gpu'
             cpu_path = old / 'test_predictions.jsonl'; cpu_path.write_bytes(b'old CPU artifact; never read\n')
             lockpath = old / 'locked.json'
             lockpath.write_text(json.dumps(dict(locked=True, dataset_dir=str(root.resolve()), test_ids=ids,

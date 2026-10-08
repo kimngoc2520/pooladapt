@@ -14,23 +14,35 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from src.evaluation.phase2 import METRICS, SEEDS, TARGETS, sha256
+from experiments import run_phase2_evaluation as evaluator
 
-OUT = ROOT / 'results/phase2/07_evaluation'
+INPUTS = ROOT / 'results/phase2/evaluation'
+OUT = INPUTS / 'final_gpu'
 
 
 def audit() -> dict[str, Any]:
     """Check populations, selection provenance, locks, aggregation, and timing."""
-    lock_path = OUT / 'locked_configurations.json'
+    lock_path = INPUTS / 'locked_configurations.json'
     lock = json.loads(lock_path.read_text(encoding='utf-8'))
-    summary = json.loads((ROOT / 'results/phase2/phase2_summary.json').read_text(encoding='utf-8'))
+    summary = json.loads((OUT / 'phase2_summary.json').read_text(encoding='utf-8'))
     if summary['status'] != 'COMPLETE' or summary['locked_configuration_sha256'] != sha256(lock_path):
         raise ValueError('final evaluation incomplete or configuration lock changed')
-    for path, digest in lock['input_sha256'].items():
-        if sha256(Path(path)) != digest:
-            raise ValueError(f'locked input changed: {path}')
-    for path, digest in lock['phase1_sha256'].items():
-        if sha256(ROOT / path) != digest:
-            raise ValueError(f'frozen Phase 1 artifact changed: {path}')
+    # Reuse strict current-source provenance and relocation-aware frozen-input
+    # checks. Historical source hashes in the lock are not current source pins.
+    # This intentionally fails until the path migration has its Stage A/B freeze.
+    evaluator.validate_lock(lock)
+    execution_digest = sha256(OUT / 'execution_manifest.json')
+    if summary.get('execution_manifest_sha256') != execution_digest:
+        raise ValueError('completed summary belongs to another execution manifest')
+    execution = json.loads((OUT / 'execution_manifest.json').read_text(encoding='utf-8'))
+    # Authenticate the completed run against its original Git freeze, not the
+    # post-run source manifest. No execution evidence is rewritten or rebound.
+    expected_provenance = evaluator.historical_execution_provenance(lock)
+    for field, expected_digest in expected_provenance.items():
+        if field == 'provenance_freeze_commit':
+            continue  # Authenticated by Git; not a field in the original run manifest.
+        if execution.get(field) != expected_digest:
+            raise ValueError(f'historical execution provenance differs: {field}')
     tree = ast.parse((ROOT / 'experiments/run_phase2_evaluation.py').read_text(encoding='utf-8'))
     if any(isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == 'fit' for node in ast.walk(tree)):
         raise ValueError('final evaluator contains a fitting call')
@@ -48,6 +60,8 @@ def audit() -> dict[str, Any]:
     with (OUT / 'test_predictions.jsonl').open(encoding='utf-8') as handle:
         for line in handle:
             row = json.loads(line)
+            if row.get('execution_manifest_sha256') != execution_digest:
+                raise ValueError('prediction belongs to another execution manifest')
             qid, method, target, seed = row['query_id'], row['method'], row['target_budget'], row['seed']
             config = configs[(method, target)]
             if config['calibration_status'] == 'FAILED' or qid not in test:
@@ -107,7 +121,9 @@ def audit() -> dict[str, Any]:
               'random_seeds': list(SEEDS), 'locked_parameters_unchanged': True, 'checkpoint_recipes_and_hashes_unchanged': True,
               'no_fit_call_in_final_evaluator': True, 'phase1_unchanged': True,
               'qrels_usage': 'TEST qrels loaded only after all inference; selector interfaces accept no relevance inputs',
-              'timing': lock['timing'], 'failed_targets': summary['calibration_failures'],
+              'timing': lock['timing'], 'failed_targets': [
+                  {'method': row['method'], 'target_budget': row['target_budget']}
+                  for row in summary['configurations'] if row['calibration_status'] == 'FAILED'],
               'test_workload_drift': summary['test_budget_drift'], 'gates': lock['gates']}
     (OUT / 'validation_checks.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(result, indent=2))

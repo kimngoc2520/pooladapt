@@ -237,12 +237,12 @@ class ReportingTests(unittest.TestCase):
                                     temperature=1 if adaptive else None, budget_bias_lambda=1 if adaptive else None,
                                     locked=True, budget_type='adaptive' if adaptive else 'exact'))
         with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp); out = root / 'evaluation'; out.mkdir()
-            lock_path, summary_path = out / 'locked.json', root / 'summary.json'
+            root = Path(temp); out = root / 'results/phase2/evaluation'; out.mkdir(parents=True)
+            lock_path, summary_path = out / 'locked.json', out / 'stage_summary.json'
             lock = dict(locked=True, dataset_dir=str(root.resolve()), test_ids=ids, configurations=configs,
                         dense_model='fake', cross_encoder_model='fake', models={'PoolAdapt': 'pool.pkl', 'SAGE-SLO': 'sage.pkl'})
             lock_path.write_text(json.dumps(lock))
-            summary_path.write_text(json.dumps({'locked_configuration_sha256': sha256(lock_path)}))
+            self.assertFalse(summary_path.exists())  # TEST must not require prior stage status.
             def evaluation_labels(path):
                 self.assertEqual(Reranker.calls, 300 * 31)
                 return {qid: {'d0': 1} for qid in ids}

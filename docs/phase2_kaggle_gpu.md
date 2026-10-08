@@ -21,7 +21,7 @@ Create a private Dataset named `pooladapt-phase2-artifacts` with this layout:
 - `data/scifact/qrels/train.tsv`, `validation.tsv`, `test.tsv`.
 - `data/scifact/splits/train_query_ids.txt`, `validation_query_ids.txt`, `split_metadata.json`.
 - `results/phase2/checkpoints/sage_slo.pkl`, `sage_slo.metadata.json`, `pooladapt.pkl`, `pooladapt.metadata.json`.
-- `results/phase2/07_evaluation/budget_calibration.csv`, `locked_configurations.json`.
+- `results/phase2/evaluation/budget_calibration.csv`, `locked_configurations.json`.
 - `results/phase2/01_candidate_logging/pool_features.csv`, `query_features.csv`, `metadata.json`.
 - `results/phase2/02_oracle/mstar_labels_tau099.csv`.
 - `results/phase2/development_reranking/validation/reranking_results.json`.
@@ -39,7 +39,17 @@ calibration digests are pinned in evaluator source. Checkpoint checksums,
 metadata, recipes, feature order, runtime compatibility and locked data remain
 verified. Do not include interrupted CPU predictions, CPU TEST outputs or an
 old GPU run in this Input Dataset. Keep those local files untouched.
-Artifacts remain gitignored; do not commit data, results, checkpoints or caches.
+Scientific artifacts remain gitignored; do not commit data, results, checkpoints
+or caches. Only the reviewed source manifest and provenance amendment under
+`results/phase2/evaluation/` are eligible for Git tracking.
+
+The existing GPU TEST is COMPLETE. Commands below document fresh/resume
+workflows, not a request to rerun it. The path-refactored source has not yet
+received its Stage A/Stage B provenance freeze and must fail current source
+validation until that separate migration is authorized. See
+[the provenance migration status](phase2_final_evaluation.md#path-migration-provenance-remains-pending).
+Fresh clones need the tracked relocated provenance files and the unchanged
+scientific Input artifacts; `.gitignore` eligibility alone does not commit files.
 
 ## Exact setup commands
 
@@ -65,7 +75,7 @@ uv pip install --python /kaggle/working/phase2-venv/bin/python \
 
 /kaggle/working/phase2-venv/bin/python -u experiments/preflight_phase2_test.py \
   --dataset-dir data/scifact \
-  --output-dir results/phase2/07_evaluation_gpu
+  --output-dir results/phase2/evaluation/final_gpu
 ```
 
 This verifies frozen inputs and performs an empty untimed warm-up; no TEST
@@ -85,23 +95,25 @@ evaluator requires no cache manifest.
 ```bash
 set -euo pipefail
 cd /kaggle/working/pooladapt
-mkdir -p results/phase2/07_evaluation_gpu
+mkdir -p results/phase2/evaluation/final_gpu
 /kaggle/working/phase2-venv/bin/python -u experiments/run_phase2_evaluation.py test \
   --dataset-dir data/scifact \
   --device cuda \
-  --output-dir results/phase2/07_evaluation_gpu \
-  --fresh-output 2>&1 | tee results/phase2/07_evaluation_gpu/run.log
+  --output-dir results/phase2/evaluation/final_gpu \
+  --fresh-output 2>&1 | tee results/phase2/evaluation/final_gpu/run.log
 ```
 
 The evaluator resolves original Windows/Linux locked paths against the clone.
 Scientific artifacts still require exact original bytes. The historical source
 hashes in the original lock are retained as provenance, while current
 execution source is validated against
-`results/phase2/07_evaluation/reviewed_source_manifest.json`: HEAD must be
-the reviewed implementation commit recorded in the amendment, every required
-path must exist, and both its canonical Git bytes and Git blob identity must
-match. No line-ending
-normalization is used. The validation lock and calibration are never rewritten.
+`results/phase2/evaluation/reviewed_source_manifest.json`: HEAD must be
+the provenance-only freeze commit whose sole parent is the reviewed
+implementation commit recorded in the amendment. Every required source path
+must exist and match its recorded Git blob after Git checkout canonicalization;
+the manifest digest is computed from exact Git blob bytes. Scientific input
+hashes still require exact filesystem bytes. The validation lock and calibration
+are never rewritten.
 The exact historical frozen `cross_encoder.py` bytes are unrecoverable and are
 not claimed byte-identical.
 
@@ -125,8 +137,8 @@ cd /kaggle/working/pooladapt
 /kaggle/working/phase2-venv/bin/python -u experiments/run_phase2_evaluation.py test \
   --dataset-dir data/scifact \
   --device cuda \
-  --output-dir results/phase2/07_evaluation_gpu \
-  --resume 2>&1 | tee -a results/phase2/07_evaluation_gpu/run.log
+  --output-dir results/phase2/evaluation/final_gpu \
+  --resume 2>&1 | tee -a results/phase2/evaluation/final_gpu/run.log
 ```
 
 Preserve the whole output directory, same Git commit, frozen inputs, runtime
@@ -146,23 +158,27 @@ finish interrupted aggregation; a COMPLETE run is refused.
 
 ## Outputs and monitoring
 
-Under `results/phase2/07_evaluation_gpu/`: `execution_manifest.json`,
+Under `results/phase2/evaluation/final_gpu/`: `execution_manifest.json`,
 `test_predictions.jsonl`, `run.log`, `comparative_results.csv`,
 `quality_cost_latency.csv`, `random_seed_results.csv`, `test_query_metrics.csv`,
 `statistical_analysis.csv`, `phase2_summary.json`. Original calibration, lock,
 Phase 1 and local CPU artifacts remain untouched.
 
 ```bash
-tail -n 20 /kaggle/working/pooladapt/results/phase2/07_evaluation_gpu/run.log
-wc -l /kaggle/working/pooladapt/results/phase2/07_evaluation_gpu/test_predictions.jsonl
+tail -n 20 /kaggle/working/pooladapt/results/phase2/evaluation/final_gpu/run.log
+wc -l /kaggle/working/pooladapt/results/phase2/evaluation/final_gpu/test_predictions.jsonl
 nvidia-smi
 ```
 
 Logs must show GPU name, effective `cuda` device, then `TEST n/300 complete`
 or resume skips. Expect 37 records/query, 11,100 records for all eight successful
-frozen adaptive points. Random uses seeds 0,1,2,3,4. Historical audit/render
-scripts default to the original output paths; do not use those defaults to
-inspect an interrupted CPU run.
+frozen adaptive points. Random uses seeds 0,1,2,3,4. The audit and report renderer
+read the completed summary and TEST outputs from `evaluation/final_gpu/`;
+frozen inputs remain in `evaluation/`. The audit retains strict provenance
+checks and cannot certify the migrated source until Stage A/B is finalized.
+It authenticates the original GPU chain from its historical Git freeze,
+separately from current working-tree validation. Historical log/manifest paths
+remain evidence of that original run. The interrupted CPU journal was not found.
 
 Run repository tests with `python -m pytest tests -q`. Default pytest collection
 also targets only `tests/` and excludes generated `results/` trees.

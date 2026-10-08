@@ -19,8 +19,8 @@ results/phase2/01_candidate_logging/metadata.json
 results/phase2/01_candidate_logging/pool_features.csv
 results/phase2/01_candidate_logging/query_features.csv
 results/phase2/02_oracle/mstar_labels_tau099.csv
-results/phase2/07_evaluation/budget_calibration.csv
-results/phase2/07_evaluation/locked_configurations.json
+results/phase2/evaluation/budget_calibration.csv
+results/phase2/evaluation/locked_configurations.json
 results/phase2/07_heuristic/heuristic_config.json
 results/phase2/checkpoints/pooladapt.metadata.json
 results/phase2/checkpoints/pooladapt.pkl

@@ -36,16 +36,16 @@ def require(condition: bool, artifact: Path | str, detail: str) -> None:
 
 def required_paths(lock: dict[str, Any], root: Path = ROOT) -> list[Path]:
     """Enumerate frozen artifacts; reviewed source is checked by the manifest."""
-    paths = {root / 'results/phase2/07_evaluation/locked_configurations.json',
-             root / 'results/phase2/07_evaluation/budget_calibration.csv'}
+    paths = {root / 'results/phase2/evaluation/locked_configurations.json',
+             root / 'results/phase2/evaluation/budget_calibration.csv'}
     for original in lock['input_sha256']:
         path = locked_path(original, lock['dataset_dir'], root)
         relative = path.relative_to(root).as_posix() if path.is_relative_to(root) else ''
         if not relative.startswith(('src/', 'experiments/')):
             paths.add(path)
     paths.update((root / name for name in (
-        'results/phase2/07_evaluation/provenance_amendment.json',
-        'results/phase2/07_evaluation/reviewed_source_manifest.json')))
+        'results/phase2/evaluation/provenance_amendment.json',
+        'results/phase2/evaluation/reviewed_source_manifest.json')))
     paths.update(root / p.replace('\\', '/') for p in lock['phase1_sha256'])
     for original in lock['models'].values():
         path = locked_path(original, lock['dataset_dir'], root)
@@ -221,7 +221,7 @@ def main() -> None:
     """Print PASS only after both input and CUDA/model readiness checks succeed."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dataset-dir', type=Path, default=ROOT / 'data/scifact')
-    parser.add_argument('--output-dir', type=Path, default=ROOT / 'results/phase2/07_evaluation_gpu')
+    parser.add_argument('--output-dir', type=Path, default=ROOT / 'results/phase2/evaluation/final_gpu')
     args = parser.parse_args()
     try:
         lock = audit_inputs(args.dataset_dir, args.output_dir)

@@ -5,12 +5,12 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'results/phase2/07_evaluation'
+OUT = ROOT / 'results/phase2/evaluation/final_gpu'
 
 
 def render() -> Path:
     """Embed real validation/TEST data with distinct tables and numeric plots."""
-    summary = json.loads((ROOT / 'results/phase2/phase2_summary.json').read_text(encoding='utf-8'))
+    summary = json.loads((OUT / 'phase2_summary.json').read_text(encoding='utf-8'))
     if summary['status'] != 'COMPLETE':
         raise ValueError('cannot render final TEST findings before evaluation completes')
     data = {'calibration': [r for r in summary['configurations'] if r['method'] in ('PoolAdapt', 'SAGE-SLO')],
