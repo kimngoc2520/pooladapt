@@ -27,12 +27,19 @@ class CrossEncoderReranker:
         model_name: str = DEFAULT_MODEL_NAME,
         top_k: int | None = 10,
         model: Any | None = None,
+        device: str | None = None,
     ) -> None:
         if top_k is not None and top_k < 0:
             raise ValueError("top_k must be non-negative or None")
         self.model_name = model_name
         self.top_k = top_k
         self._model = model
+        self.device = device
+        if device is not None and device.split(':')[0] == 'cuda':
+            import torch
+            if not torch.cuda.is_available():
+                raise RuntimeError('CUDA requested but torch.cuda.is_available() is False; CPU fallback is forbidden')
+            print(f'CUDA GPU: {torch.cuda.get_device_name(0)}', flush=True)
         self.last_latency_rerank_seconds = 0.0
         self.last_latency_ce_seconds = 0.0
 
@@ -45,12 +52,28 @@ class CrossEncoderReranker:
                     "CrossEncoderReranker requires sentence-transformers; install the project dependencies "
                     "or pass a compatible model for testing."
                 ) from error
-            self._model = CrossEncoder(self.model_name)
+            self._model = CrossEncoder(self.model_name, **({'device': self.device} if self.device is not None else {}))
+        if self.device is not None and self.device.split(':')[0] == 'cuda' and not self.effective_device.startswith('cuda'):
+            raise RuntimeError(f'CUDA requested but effective CrossEncoder device is {self.effective_device}')
         return self._model
+
+    @property
+    def effective_device(self) -> str:
+        """Expose the actual loaded model device without triggering model loading."""
+        return str(getattr(self._model, 'device', 'cpu'))
+
+    def _synchronize(self) -> None:
+        """Wait for this model's GPU work, leaving CPU timing unchanged."""
+        if self.effective_device.startswith('cuda'):
+            import torch
+            torch.cuda.synchronize(self.effective_device)
 
     def warm_up(self) -> None:
         """Load the model once and perform an untimed inference warm-up."""
         self._get_model().predict([("", "")])
+        self._synchronize()
+        if self.device is not None:
+            print(f'Effective CrossEncoder device: {self.effective_device}', flush=True)
 
     @staticmethod
     def _document_text(candidate: dict[str, Any]) -> str:
@@ -78,6 +101,7 @@ class CrossEncoderReranker:
         # Model construction/download is deliberately outside the timed region.
         # The experiment runner calls ``warm_up`` before processing any query.
         model = self._get_model()
+        self._synchronize()
         rerank_started = time.perf_counter()
         candidates = list(candidates)
         limit = self.top_k if top_k is None else top_k
@@ -89,8 +113,10 @@ class CrossEncoderReranker:
             return []
 
         pairs = [(query, self._document_text(candidate)) for candidate in candidates]
+        self._synchronize()
         ce_started = time.perf_counter()
         scores = model.predict(pairs)
+        self._synchronize()
         self.last_latency_ce_seconds = time.perf_counter() - ce_started
         if len(scores) != len(candidates):
             raise ValueError("Cross-Encoder returned a score count different from the candidate count")

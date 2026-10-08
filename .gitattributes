@@ -1,0 +1,3 @@
+# Preserve raw-file provenance SHA256 across Windows/Linux checkouts.
+results/phase2/evaluation/provenance_amendment.json text eol=lf
+results/phase2/evaluation/reviewed_source_manifest.json text eol=lf
