@@ -1,6 +1,6 @@
 {
-  "amendment_timestamp": "2026-10-07T10:16:01+07:00",
-  "calibration_path": "results/phase2/07_evaluation/budget_calibration.csv",
+  "amendment_timestamp": "2026-10-08T22:27:16+07:00",
+  "calibration_path": "results/phase2/evaluation/budget_calibration.csv",
   "calibration_sha256": "abdd419d36854f9b70608282b1172caae21424dd1e3bf9c4798b6f3595389738",
   "controls": {
     "frozen_artifacts_overwritten": false,
@@ -2254,10 +2254,10 @@
   "decision_state_projection_sha256": "9ef007d72baf7a35653ff6515532dae1b62f32265a64eb1716f7c5ef652a4c61",
   "execution_semantic_review": {
     "intentional_scientific_behavior_change_found": false,
-    "statement": "The reviewed GPU implementation changes execution infrastructure but does not change the frozen experimental decision state or evaluation semantics.",
-    "verdict": "SAFE_FOR_PROVENANCE_AMENDMENT"
+    "statement": "Static review of Stage A covers post-run directory migration, explicit historical Git authentication, LF provenance checkout rules, and summary-path handling. No scientific algorithm, locked parameter, calibration, checkpoint, or completed GPU output is changed. Stage A is not claimed to be the source used for the historical Kaggle GPU run. No project code or experiments were executed for this review.",
+    "verdict": "SAFE_FOR_POST_RUN_PROVENANCE_MIGRATION"
   },
-  "finalization_model": "Stage B provenance-freeze commit has the Stage A reviewed implementation commit as its sole parent; runtime validates that parent relationship and restricts Stage B changes to provenance artifacts.",
+  "finalization_model": "The Stage B commit must have reviewed Stage A 0685b90df7bacb56021cf651036dee9030f77713 as its sole parent and change only the two current-location provenance JSON files. Historical execution is authenticated independently from fixed Git freeze 158ba388cbef7016fb2f07d7cc990d40d2e1e55f. Metadata review does not claim runtime validation or an already-created Stage B commit.",
   "historical_source_discrepancy": {
     "exact_historical_bytes_recoverable": false,
     "original_frozen_sha256": "55b97fd345fea3cf2b186da7f7cf800fd261fe41eebf00542ccda2a20562e8e8",
@@ -2265,16 +2265,29 @@
     "statement": "The exact historical frozen cross_encoder.py bytes are unrecoverable; this amendment does not claim byte identity."
   },
   "limitations": [
+    "This amendment reviews post-run Stage A source, not the original Kaggle GPU execution source. Original review, source identities and metadata remain authenticated in historical Git objects.",
+    "Raw-file SHA256 contracts and strict resume equality remain unchanged; canonical Git identity does not permit resuming a run with different raw source bytes.",
     "CPU and CUDA inference can differ in floating-point values and near-tie ordering; byte-identical scores or rankings are not claimed.",
     "The reviewed source is pinned by exact Git commit/blob manifest, not claimed identical to the unrecoverable historical CrossEncoder source."
   ],
-  "original_lock_path": "results/phase2/07_evaluation/locked_configurations.json",
+  "original_lock_path": "results/phase2/evaluation/locked_configurations.json",
   "original_lock_precedes_reviewed_commit": true,
   "original_lock_sha256": "fe1a76073021fd913148c2429eedf37e322220de99febf1a05ea1e828a89048c",
-  "reviewed_execution_commit": "415d4728e0f4cc484e3cfa0559875e743542e522",
-  "reviewed_source_manifest_path": "results/phase2/07_evaluation/reviewed_source_manifest.json",
+  "reviewed_execution_commit": "0685b90df7bacb56021cf651036dee9030f77713",
+  "reviewed_source_manifest_path": "results/phase2/evaluation/reviewed_source_manifest.json",
   "reviewed_source_manifest_schema": "pooladapt.reviewed-source-manifest.v2",
-  "reviewed_source_manifest_sha256": "c74244c2fa1f38f1ad93cf1b3f61fad77215d8988e5dd8570a667a9f4684a15e",
-  "schema": "pooladapt.provenance-amendment.v1",
+  "reviewed_source_manifest_sha256": "1e31c05f0c4e1193cc9f4437968689711b9132adfc2d40f6403d31dfab0763c2",
+  "historical_execution": {
+    "provenance_freeze_commit": "158ba388cbef7016fb2f07d7cc990d40d2e1e55f",
+    "reviewed_execution_commit": "415d4728e0f4cc484e3cfa0559875e743542e522",
+    "reviewed_source_manifest_sha256": "c74244c2fa1f38f1ad93cf1b3f61fad77215d8988e5dd8570a667a9f4684a15e",
+    "provenance_amendment_sha256": "b60e31491fc6221bc474c1da511a894dce98688771a432e37a4479312db4938f",
+    "lock_sha256": "fe1a76073021fd913148c2429eedf37e322220de99febf1a05ea1e828a89048c",
+    "calibration_sha256": "abdd419d36854f9b70608282b1172caae21424dd1e3bf9c4798b6f3595389738",
+    "decision_state_projection_sha256": "9ef007d72baf7a35653ff6515532dae1b62f32265a64eb1716f7c5ef652a4c61",
+    "source_manifest_files": 64
+  },
+  "scope": "post-run path migration",
+  "schema": "pooladapt.provenance-amendment.v2",
   "status": "finalized / reviewed"
 }
