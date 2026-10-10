@@ -18,3 +18,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["results", "data", ".venv", "venv", "phase2-venv"]
