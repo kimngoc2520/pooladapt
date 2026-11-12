@@ -99,3 +99,15 @@ improvement/improvement_1/tables/
 improvement/improvement_1/*.docx
 improvement/improvement_1/*.pdf
 improvement/improvement_1/*.svg
+
+# Query-group analysis: keep source scripts, ignore generated results
+!results/query_group_analysis/
+results/query_group_analysis/*
+!results/query_group_analysis/scripts/
+results/query_group_analysis/scripts/*
+!results/query_group_analysis/scripts/*.py
+
+# Temporary files
+*.tmp
+*.bak
+~$*
