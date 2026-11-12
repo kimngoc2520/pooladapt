@@ -1,0 +1,21 @@
+method,operating_point,seed,n_queries,p50_ms,p95_ms,scope,unit
+Random,B10,0,300,58.17196199996033,60.68746930001794,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B10,1,300,57.8557929999306,60.73997460001692,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B10,2,300,57.701778999899034,60.37082934983573,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B10,3,300,57.62995100008084,60.2877543000659,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B10,4,300,57.72494699999697,60.65582344997438,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B20,0,300,115.89305600000444,119.42455129993732,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B20,1,300,116.61823999997978,119.42840655000282,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B20,2,300,116.6968790000169,119.58379500007368,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B20,3,300,116.73508950002542,119.45049929996685,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B20,4,300,116.95631600002798,119.98353544992142,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B30,0,300,175.65714099998786,186.44008290000897,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B30,1,300,177.74285850015303,185.01387790009858,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B30,2,300,178.3743510000022,182.87325885034988,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B30,3,300,178.28555499988852,182.47594650011933,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B30,4,300,178.17433200013966,181.65028869985917,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B50,0,300,250.58570500004862,289.1273819001526,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B50,1,300,253.27873650019228,283.7482158000739,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B50,2,300,253.02555749999556,285.1919443501117,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B50,3,300,252.57894449993046,284.617796800012,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
+Random,B50,4,300,251.82747850004716,285.58959355008255,"Pair preparation + inference + sorting; excludes retrieval, selection, model load and warm-up; source seconds converted to ms",ms
