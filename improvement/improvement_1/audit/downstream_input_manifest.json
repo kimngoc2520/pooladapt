@@ -1,0 +1,55 @@
+{
+  "input_files": [
+    {
+      "path": "improvement/improvement_1/matched_budget/query_level_evaluation.csv",
+      "sha256_current_bytes": "ff6be565f2437ef10642ccc93394bae83f2d82547c0065fac999eed1b2bc0609",
+      "rows": 11100,
+      "hash_semantics": "current observed bytes; downstream hash, not a historical frozen-output hash"
+    },
+    {
+      "path": "data/scifact/qrels/test.tsv",
+      "sha256_current_bytes": "0864bb985e0ca2367ba217977e72004d549054b2b06666ed9d4825ac7c21284c",
+      "rows": 339,
+      "hash_semantics": "current observed bytes; downstream hash, not a historical frozen-output hash"
+    },
+    {
+      "path": "improvement/improvement_1/audit/test_provenance_audit_report.md",
+      "sha256_current_bytes": "3b01d05213f93666758cba0d61234e37145cc8cf3bb75bb0f19a122933fef8e9",
+      "rows": 98,
+      "hash_semantics": "current observed bytes; downstream hash, not a historical frozen-output hash"
+    },
+    {
+      "path": "improvement/improvement_1/audit/artifact_consistency_audit.csv",
+      "sha256_current_bytes": "989fdb64aa6907a8cb9b28b9ae1e675ec5303ce3de7beeab0216f215c420d83a",
+      "rows": 91,
+      "hash_semantics": "current observed bytes; downstream hash, not a historical frozen-output hash"
+    },
+    {
+      "path": "improvement/improvement_1/audit/data_handoff_specification.md",
+      "sha256_current_bytes": "270017781ef589b99738ab2937daabfbd10f0f53d08872de42cda002d827c7d0",
+      "rows": 61,
+      "hash_semantics": "current observed bytes; downstream hash, not a historical frozen-output hash"
+    },
+    {
+      "path": "results/phase2/evaluation/final_gpu/phase2_summary.json",
+      "sha256_current_bytes": "db2cf2e408ca8ffeaf70aa8c1727e6a37086a7bb05ca588c349f1124dc0db785",
+      "rows": 6943,
+      "hash_semantics": "current observed bytes; downstream hash, not a historical frozen-output hash"
+    }
+  ],
+  "analysis_configuration": {
+    "random_seed": 20261112,
+    "bootstrap_replicates": 10000,
+    "permutation_replicates": 100000,
+    "primary_matched_budgets": [
+      10,
+      20,
+      50
+    ],
+    "budget_tolerance_pct": 5.0,
+    "random_seed_aggregation": "arithmetic mean of the five seed records within each query/method/operating point; n remains 300 queries",
+    "high_latency_rule": "Tukey upper fence: latency > Q3 + 1.5*IQR within method/operating point",
+    "positive_qrels_validation_source": "three-column SciFact qrels; score > 0",
+    "latency_scope": "pair preparation + Cross-Encoder inference + sorting; excludes retrieval, selection, model load and warm-up"
+  }
+}
