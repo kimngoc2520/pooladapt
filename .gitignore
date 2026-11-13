@@ -84,3 +84,30 @@ __pycache__/
 
 # recovered_frozen_source\experiments
 recovered_frozen_source/experiments/
+
+# Improvement 1 generated experiment artifacts
+improvement/improvement_1/audit/
+improvement/improvement_1/failure_analysis/
+improvement/improvement_1/figures/
+improvement/improvement_1/latency_cost/
+improvement/improvement_1/matched_budget/
+improvement/improvement_1/pareto/
+improvement/improvement_1/statistics/
+improvement/improvement_1/tables/
+
+# Improvement 1 generated reports and temporary files
+improvement/improvement_1/*.docx
+improvement/improvement_1/*.pdf
+improvement/improvement_1/*.svg
+
+# Query-group analysis: keep source scripts, ignore generated results
+!results/query_group_analysis/
+results/query_group_analysis/*
+!results/query_group_analysis/scripts/
+results/query_group_analysis/scripts/*
+!results/query_group_analysis/scripts/*.py
+
+# Temporary files
+*.tmp
+*.bak
+~$*
