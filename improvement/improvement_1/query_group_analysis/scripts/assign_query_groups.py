@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 try:
@@ -12,7 +11,6 @@ except ImportError:
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[3]
 FEATURES_DIR = OUT / "features"
 GROUPS_DIR = OUT / "groups"
 FORBIDDEN_TOKENS = ("ndcg", "recall", "mrr", "qrel", "relevance", "label", "pooladapt", "fixed_prefix", "latency", "cost", "rerank")

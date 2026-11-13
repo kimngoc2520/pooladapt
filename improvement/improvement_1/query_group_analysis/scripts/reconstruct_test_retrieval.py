@@ -5,18 +5,16 @@ import json
 import os
 import sys
 import time
-from pathlib import Path
 from typing import Any
 
 try:
-    from .common import (LOCKED, METRICS, OUT, PREDICTIONS, RECON, SNAPSHOT,
+    from .common import (LOCKED, METRICS, OUT, PREDICTIONS, RECON, ROOT, SNAPSHOT,
                          get_run_id, load_frozen_inputs, rbo, sha256_file, sha256_json, write_bytes_new, write_json_new)
 except ImportError:  # Direct script execution from this isolated scripts directory.
-    from common import (LOCKED, METRICS, OUT, PREDICTIONS, RECON, SNAPSHOT,
+    from common import (LOCKED, METRICS, OUT, PREDICTIONS, RECON, ROOT, SNAPSHOT,
                         get_run_id, load_frozen_inputs, rbo, sha256_file, sha256_json, write_bytes_new, write_json_new)
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[3]
 EXPECTED_SNAPSHOT = "RECONSTRUCTED_CANDIDATE_REVISION_NOT_VERIFIED_HISTORICAL"
 EXPECTED_MODEL_FILES = {
     "config.json", "config_sentence_transformers.json", "model.safetensors", "modules.json",

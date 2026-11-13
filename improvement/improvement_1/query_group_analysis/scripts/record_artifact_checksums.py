@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 try:
     from .common import OUT, RECON, sha256_file, write_json_new

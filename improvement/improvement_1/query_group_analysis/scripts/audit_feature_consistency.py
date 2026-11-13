@@ -2,18 +2,16 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
 try:
-    from .common import LOCKED, OUT, RECON, load_frozen_inputs, read_csv, write_csv_new
+    from .common import LOCKED, OUT, RECON, ROOT, load_frozen_inputs, read_csv, write_csv_new
 except ImportError:
-    from common import LOCKED, OUT, RECON, load_frozen_inputs, read_csv, write_csv_new
+    from common import LOCKED, OUT, RECON, ROOT, load_frozen_inputs, read_csv, write_csv_new
 
-ROOT = Path(__file__).resolve().parents[3]
 FEATURES = OUT / "features"
 
 

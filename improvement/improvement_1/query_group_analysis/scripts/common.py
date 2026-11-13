@@ -11,8 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-ROOT = Path(__file__).resolve().parents[3]
-OUT = ROOT / "results" / "query_group_analysis"
+ROOT = Path(__file__).resolve().parents[4]
+OUT = ROOT / "improvement" / "improvement_1" / "query_group_analysis"
 LOCKED = ROOT / "results" / "phase2" / "evaluation" / "locked_configurations.json"
 PREDICTIONS = ROOT / "results" / "phase2" / "evaluation" / "final_gpu" / "test_predictions.jsonl"
 METRICS = ROOT / "results" / "phase2" / "evaluation" / "final_gpu" / "test_query_metrics.csv"

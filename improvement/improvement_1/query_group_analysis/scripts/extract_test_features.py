@@ -10,13 +10,12 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .common import (OUT, RECON, FEATURE_SCHEMA_VERSION, load_frozen_inputs, read_csv, rbo, sha256_file, write_csv_new)
+    from .common import (OUT, RECON, ROOT, FEATURE_SCHEMA_VERSION, load_frozen_inputs, read_csv, rbo, sha256_file, write_csv_new)
 except ImportError:
-    from common import (OUT, RECON, FEATURE_SCHEMA_VERSION, load_frozen_inputs, read_csv, rbo, sha256_file, write_csv_new)
+    from common import (OUT, RECON, ROOT, FEATURE_SCHEMA_VERSION, load_frozen_inputs, read_csv, rbo, sha256_file, write_csv_new)
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[3]
 OUT_FEATURES = OUT / "features"
 TOKEN_RE = re.compile(r"\w+", flags=re.UNICODE)
 FORBIDDEN = ("ndcg", "recall", "mrr", "qrel", "relevance", "label", "pooladapt", "fixed_prefix", "latency", "cost", "rerank")
