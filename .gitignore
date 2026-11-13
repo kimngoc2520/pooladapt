@@ -102,6 +102,10 @@ improvement/improvement_1/*.svg
 
 # Query-group analysis: keep source scripts, ignore local analysis artifacts
 improvement/improvement_1/query_group_analysis/*
+!improvement/improvement_1/query_group_analysis/evaluation/
+improvement/improvement_1/query_group_analysis/evaluation/*
+!improvement/improvement_1/query_group_analysis/evaluation/report_en.md
+!improvement/improvement_1/query_group_analysis/evaluation/report_vi.md
 !improvement/improvement_1/query_group_analysis/scripts/
 improvement/improvement_1/query_group_analysis/scripts/*
 !improvement/improvement_1/query_group_analysis/scripts/*.py
