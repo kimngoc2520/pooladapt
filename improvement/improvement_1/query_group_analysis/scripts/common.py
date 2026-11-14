@@ -16,7 +16,26 @@ OUT = ROOT / "improvement" / "improvement_1" / "query_group_analysis"
 LOCKED = ROOT / "results" / "phase2" / "evaluation" / "locked_configurations.json"
 PREDICTIONS = ROOT / "results" / "phase2" / "evaluation" / "final_gpu" / "test_predictions.jsonl"
 METRICS = ROOT / "results" / "phase2" / "evaluation" / "final_gpu" / "test_query_metrics.csv"
-SNAPSHOT = Path(r"C:\Users\PC\.cache\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2\snapshots\1110a243fdf4706b3f48f1d95db1a4f5529b4d41")
+
+MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+MODEL_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+
+HF_HOME = Path(
+    os.environ.get(
+        "HF_HOME",
+        str(Path.home() / ".cache" / "huggingface")
+    )
+).expanduser().resolve()
+
+HF_HUB_CACHE = HF_HOME / "hub"
+
+SNAPSHOT = (
+    HF_HUB_CACHE
+    / "models--sentence-transformers--all-MiniLM-L6-v2"
+    / "snapshots"
+    / MODEL_REVISION
+)
+
 RECON = OUT / "reconstruction"
 FEATURES = OUT / "features"
 GROUPS = OUT / "groups"
