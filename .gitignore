@@ -110,7 +110,20 @@ improvement/improvement_1/query_group_analysis/evaluation/*
 improvement/improvement_1/query_group_analysis/scripts/*
 !improvement/improvement_1/query_group_analysis/scripts/*.py
 
+# Improvement 2 - keep local audit and experiment artifacts out of Git
+/improvement/improvement_2/audit/
+/improvement/improvement_2/manifests/
+/improvement/improvement_2/reports/
+/improvement/improvement_2/results/
+
 # Temporary files
 *.tmp
 *.bak
 ~$*
+# Python cache and temporary files
+*.log
+
+
+# Local secrets
+.env.*
+!.env.example
