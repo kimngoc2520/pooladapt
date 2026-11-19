@@ -1,0 +1,68 @@
+{
+  "run_id": "ct2_0_gate_a_20261118_pending",
+  "stage": "CT2.0 / Gate A",
+  "status": "BLOCKED_PENDING_GROUP_APPROVAL",
+  "purpose": "Pre-execution registration package only; no confirmatory paired analysis has been run.",
+  "population": {
+    "dataset": "SciFact",
+    "included_splits": ["TRAIN", "VALIDATION"],
+    "expected_queries": 809,
+    "test_included": false
+  },
+  "comparison": {
+    "reference": "Oracle M* allocation",
+    "baseline": "Fixed RRF Prefix-10",
+    "metric": "nDCG@10",
+    "tau": 0.99,
+    "budget_grid": [10, 20, 30, 50, 100],
+    "paired_difference": "nDCG@10(M*(q), q) - nDCG@10(10, q)",
+    "gate_threshold_delta_A": 0.005
+  },
+  "fixed_by_current_draft_protocol": [
+    "development population only",
+    "tau=0.99",
+    "nDCG@10 metric implementation",
+    "paired difference direction",
+    "95% confidence interval reporting",
+    "Gate A lower/upper-bound interpretation"
+  ],
+  "pending_group_approval": {
+    "protocol_freeze_and_delta_A_confirmation": true,
+    "confidence_interval_method": {
+      "proposal": "Percentile nonparametric paired bootstrap of the mean paired difference.",
+      "rationale": "The estimand is the mean of query-level paired differences; resampling whole query pairs preserves the within-query Oracle-vs-Fixed-10 pairing and needs no normality assumption.",
+      "impact": "The CI bounds directly determine the Gate A outcome; a different registered interval changes the inferential procedure and must be frozen before observing the result."
+    },
+    "resampling_unit": {
+      "proposal": "One development query's complete paired difference.",
+      "rationale": "Queries are the registered evaluation units; resampling ranking rows/documents would break the paired query-level estimand.",
+      "impact": "Defines the sampling interpretation of the CI."
+    },
+    "resampling_count": {
+      "proposal": 10000,
+      "rationale": "Provides stable percentile endpoints while remaining a practical fixed reproducibility setting.",
+      "impact": "Must be fixed because Monte Carlo precision and reproducibility depend on it."
+    },
+    "seed": {
+      "proposal": 20261118,
+      "rationale": "A dedicated, recorded seed makes the resampling realization reproducible and is not selected from results.",
+      "impact": "Changing it changes finite-resample CI endpoints."
+    },
+    "confidence_level": {
+      "proposal": 0.95,
+      "rationale": "Matches the draft protocol's requested 95% CI.",
+      "impact": "Must be implemented as two-sided 2.5th/97.5th percentile endpoints if the bootstrap proposal is approved."
+    },
+    "edge_cases": {
+      "proposal": "Use the existing nDCG implementation, including its defined zero return when IDCG is zero; retain zero paired differences in the mean and bootstrap; fail before inference on missing, duplicate, extra, or misaligned IDs or unavailable required budget rankings.",
+      "rationale": "Preserves the registered metric and makes population/data failures explicit rather than silently filtering queries.",
+      "impact": "Controls both the estimand population and reproducibility of the reported N."
+    },
+    "additional_inference": {
+      "proposal": "Report the mean difference and the registered CI only for Gate A; treat the stated bound rule as the decision criterion and do not add an unregistered significance test.",
+      "rationale": "Avoids post-hoc test selection and follows the protocol's CI-based Gate A rule.",
+      "impact": "Prevents interpreting non-significance as equivalence."
+    }
+  },
+  "execution_authorized": false
+}

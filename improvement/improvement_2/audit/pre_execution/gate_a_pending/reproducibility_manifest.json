@@ -1,0 +1,25 @@
+{
+  "run_id": "ct2_0_gate_a_20261118_pending",
+  "stage": "CT2.0 / Gate A",
+  "created_on": "2026-11-18",
+  "repository_commit": "2977ebfb2a4eaa18945c129bd0f4448c30f4fddc",
+  "protocol_sha256": "49d3298c829d05c3e8bef21854154b42cc22c6ff9751dede04ef21b2276c81d7",
+  "protocol_status": "draft_not_frozen",
+  "execution": {
+    "performed": false,
+    "command": null,
+    "environment": null,
+    "runtime": null,
+    "random_seed": null,
+    "deviations": ["Confirmatory analysis intentionally stopped before input validation and paired analysis because required inference decisions are not approved."]
+  },
+  "population": "SciFact TRAIN+VALIDATION only (expected N=809); TEST excluded",
+  "input_manifest": "input_manifest.json",
+  "output_manifest": "output_manifest.json",
+  "approval_required_before_execution": [
+    "protocol version/hash and approval record",
+    "delta_A confirmation",
+    "CI method, resampling unit/count/seed, confidence-level implementation",
+    "edge-case and additional inference procedure"
+  ]
+}

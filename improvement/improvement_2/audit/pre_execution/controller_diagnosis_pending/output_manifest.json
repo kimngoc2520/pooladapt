@@ -1,0 +1,8 @@
+{
+  "run_id": "ct2_2_controller_diagnosis_20261118_pending",
+  "status": "NO_CONFIRMATORY_DIAGNOSIS_OUTPUTS_GENERATED",
+  "reason": "The approved Full CT2.1 aggregate OOF dependency is missing; OOF, absent-class, discrete decision, and uncertainty procedures are not approved.",
+  "intentionally_absent_until_dependencies_resolve": ["oof_diagnosis_dataset", "allocation_error_records", "hard_detection_metrics", "confusion_matrix", "query_level_quality_cost_records", "error_pattern_analysis", "statistical_results"],
+  "pre_execution_artifacts": ["configuration_pending_approval.json", "input_manifest.json", "output_manifest.json", "reproducibility_manifest.json", "ct2_2_controller_diagnosis_report.md"],
+  "overwrite_policy": "A future approved execution must receive a distinct run ID and must not overwrite this package or any CT2.1 artifact."
+}

@@ -1,0 +1,9 @@
+# Kiểm toán selector
+
+**Trạng thái: COMPLETE.** `experiments/run_pooladapt.py::build_model` tạo `Pipeline(SimpleImputer(strategy='median'), StandardScaler(), LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42))`. Sidecar `results/phase2/checkpoints/pooladapt.metadata.json` xác nhận solver `lbfgs`, C=1, tol=1e-4, fit_intercept=True và 647 TRAIN queries; class counts 10:605, 20:23, 30:7, 50:11, 100:1. Cân bằng lớp là `class_weight='balanced'`, không resampling.
+
+Input có đúng thứ tự 13 biến của `FROZEN_FEATURES`: 9 pool rồi 4 query. Missing CSV được đổi NaN trong `feature_rows`; SimpleImputer median được fit trong pipeline TRAIN; sau đó StandardScaler. Validation không fit/model-select; `run_pooladapt.py` dùng validation để sinh prediction/metric. Calibration final dùng `src/evaluation/phase2.py::calibrate`, lambda-only, validation-only và tìm policy region để khớp target average K.
+
+`src/pooladapt/selector.py::PoolAdaptSelector.logits` gọi `predict_proba`, map `model.classes_` sang grid {10,20,30,50,100}, lấy log; `calibrated_logits` là `logit/T + lambda*g(K)`, `g(K)=-(K-mean)/std`; `predict` argmax có tie-break K nhỏ hơn. `select_rrf_prefix` luôn chọn prefix RRF, không có candidate-level learned selection. Thiếu candidate pool dưới K hoặc feature-name sai đều raise error; xác suất lớp thiếu bị clamp `1e-12` (fallback số học, không phải fallback policy).
+
+Checkpoint `pooladapt.pkl` + metadata tồn tại; SHA sidecar `6869...6004`, reload fresh instance của 16 TRAIN rows PASS (class/prediction/probability identical). `src/pooladapt/checkpoints.py::load_checkpoint` kiểm tra checksum, schema/order/grid, version runtime, metadata và pipeline config. Sanity validation trong `results/phase2/10_pooladapt/pooladapt_sanity.json` cho lambda -5/0/5 average K 83.33/25.06/11.05: policy responsive. Lưu ý `pooladapt_results.csv` là development/validation; final TEST dùng policy calibration lock, không tái huấn luyện.

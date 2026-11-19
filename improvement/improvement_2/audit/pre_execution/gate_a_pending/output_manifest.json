@@ -1,0 +1,18 @@
+{
+  "run_id": "ct2_0_gate_a_20261118_pending",
+  "status": "NO_CONFIRMATORY_OUTPUTS_GENERATED",
+  "reason": "Essential Gate A inference decisions and protocol freeze are pending group approval.",
+  "intentionally_absent_until_approval": [
+    "query_level_paired_results.csv",
+    "statistical_analysis.json",
+    "summary_table.csv",
+    "gate_a_decision.json"
+  ],
+  "pre_execution_artifacts": [
+    "configuration_pending_approval.json",
+    "input_manifest.json",
+    "reproducibility_manifest.json",
+    "ct2_0_gate_a_report.md"
+  ],
+  "overwrite_policy": "A future approved execution must use a new run ID and must not overwrite this pending package or historical artifacts."
+}

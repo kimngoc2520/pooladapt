@@ -1,0 +1,24 @@
+{
+  "run_id": "ct2_0_gate_a_20261118_pending",
+  "status": "PINNED_FOR_REVIEW_NOT_YET_STAGE_VALIDATED",
+  "repository_commit": "2977ebfb2a4eaa18945c129bd0f4448c30f4fddc",
+  "protocol": {
+    "path": "improvement/improvement_2/docs/CT2_Experiment_Protocol_draft_20261118.md",
+    "sha256": "b683345989a066f30c28ac774512282891e78fc7855156a43520a487866216e1",
+    "status": "DRAFT_NOT_FROZEN"
+  },
+  "inputs": [
+    {"path": "results/phase2/02_oracle/mstar_labels_tau099.csv", "bytes": 26897, "sha256": "48c3f4cac98999881912a6d3e32a6954ff3d439dbdfde196a6536b30dcdb3103", "role": "development Oracle M* labels"},
+    {"path": "results/phase2/02_oracle/mstar_analysis_tau099.json", "bytes": 649, "sha256": "9d39923c933ee190a2b4c653aa5356296ada13479a67ec4443bc3dab96055bf2", "role": "inherited M* population summary"},
+    {"path": "results/phase2/development_reranking/train/reranking_results.json", "bytes": 1814186, "sha256": "06d898c0bb0ae329ad392332c5480563663ce5ad15d0325d237c9cf569a8e22d", "role": "TRAIN prefix/full rankings"},
+    {"path": "results/phase2/development_reranking/validation/reranking_results.json", "bytes": 455459, "sha256": "cbacaa2b8f923b1b2624bdb6554cc8cf13fa7ad6242d7256ce2384dae7d2f701", "role": "VALIDATION prefix/full rankings"},
+    {"path": "data/scifact/qrels/train.tsv", "bytes": 14502, "sha256": "a53f2114831916c096b6c37d9e54da68cef4efdcdbd5ed46533601af972acf1d", "role": "TRAIN qrels"},
+    {"path": "data/scifact/qrels/validation.tsv", "bytes": 2994, "sha256": "24e37902c9fd900049a5014b85372e7de871e511950fc00ac93df7844384f230", "role": "VALIDATION qrels"},
+    {"path": "data/scifact/splits/train_query_ids.txt", "bytes": 3367, "sha256": "e31eb8ad41edaf534be7a0d9d83085e1bcdd9ca0aaf002a3eec166a8e27e3ad5", "role": "TRAIN population IDs"},
+    {"path": "data/scifact/splits/validation_query_ids.txt", "bytes": 840, "sha256": "30a3ac2b85bea79525de755d7c036c1532efc889594df6a450ec5f7030557126", "role": "VALIDATION population IDs"},
+    {"path": "src/evaluation/retrieval_metrics.py", "bytes": 1563, "sha256": "ee9ccd07cd27ee9437f87eaffb70902fbe856c441af279645135c6251a1bcc23", "role": "registered metric implementation"},
+    {"path": "src/analysis/oracle_mstar.py", "bytes": 5954, "sha256": "70bff0a7c9754f8d6e06860c697cf2873c58ed2d811a4332dcf6a07eda3609f6", "role": "registered M* implementation reference"}
+  ],
+  "excluded_inputs": ["data/scifact/qrels/test.tsv", "any TEST rankings", "any TEST feature or evaluation artifact"],
+  "expected_population": {"train_queries": 647, "validation_queries": 162, "development_queries": 809, "test_queries_used": 0}
+}
