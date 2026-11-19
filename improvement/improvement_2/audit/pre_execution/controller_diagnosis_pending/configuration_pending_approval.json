@@ -1,0 +1,62 @@
+{
+  "run_id": "ct2_2_controller_diagnosis_20261118_pending",
+  "stage": "CT2.2 / Controller Diagnosis",
+  "status": "BLOCKED_PENDING_CT2_1_OOF_AND_GROUP_APPROVAL",
+  "purpose": "Pre-execution diagnosis package only. No diagnostic dataset, allocation result, hard metric, confusion matrix, quality-cost analysis, or error-pattern result has been generated.",
+  "fixed_draft_settings": {
+    "dataset": "SciFact development only",
+    "population_n": 809,
+    "test_included": false,
+    "mstar_tau": 0.99,
+    "hard_definition": "1[M_star > 10]",
+    "hard_prevalence_inherited": {"hard": 52, "total": 809, "rate": 0.06427688504326329},
+    "budget_grid": [10, 20, 30, 50, 100],
+    "hard_score": "P(K=20)+P(K=30)+P(K=50)+P(K=100), aligned by class label rather than column position",
+    "allocation_error_metrics": ["K_pred - M_star", "abs(K_pred - M_star)", "approved ordinal error", "K_pred < M_star", "K_pred > M_star"]
+  },
+  "required_upstream_artifact_contract": {
+    "status": "MISSING",
+    "producer": "approved CT2.1 Full-feature controlled-ablation run",
+    "required_population": "exactly one approved aggregate OOF record per each of 809 development query IDs",
+    "required_fields": ["query_id", "M_star", "aggregate probability mapping keyed by budget label", "aggregate predicted_K", "per-K prefix quality inputs or selected quality outcomes", "allocated_K/reranked_pairs", "fold/repeat provenance", "feature configuration=Full", "input and procedure hashes"],
+    "prohibited_substitutes": ["historical TEST predictions", "run_pooladapt.py validation predictions", "binary Easy/Hard feasibility fold scores", "repeated fold rows treated as independent query records"]
+  },
+  "pending_group_approval": {
+    "OOF_and_absent_class_policy": {
+      "proposal": "Adopt the approved CT2.1 Full-model query-level aggregate OOF record unchanged; do not recompute, refit, renormalize, or fabricate absent-class probabilities in CT2.2.",
+      "rationale": "Diagnosis must inherit a leakage-safe, class-aware upstream estimate and must not add a second unregistered prediction policy.",
+      "impact": "CT2.2 cannot run for any query/configuration whose approved OOF procedure declares the probability vector unavailable."
+    },
+    "hard_score_and_AP": {
+      "proposal": "Compute each query's Hard score by summing the approved aggregate probabilities keyed to 20, 30, 50, and 100. Report sklearn `average_precision_score` once on the single 809-query aggregated vector with Hard=1, alongside prevalence as its no-skill reference; do not label it trapezoidal PR-AUC.",
+      "rationale": "This follows the protocol's label mapping and avoids the invalid independent-fold-row interpretation.",
+      "impact": "AP and uncertainty depend on the approved OOF aggregation and missing-class policy."
+    },
+    "discrete_hard_decision_rule": {
+      "proposal": "For the requested precision/recall/F1/confusion matrix, classify a query as predicted Hard if its approved aggregate predicted budget is greater than 10. Do not tune a score threshold.",
+      "rationale": "It is the direct binary coarsening of the existing five-level allocation action and matches Hard=1[M*>10] without selecting a threshold from outcomes.",
+      "impact": "This rule defines all discrete Hard metrics; a different approved operating rule changes their values and must be recorded before diagnosis."
+    },
+    "ordinal_error": {
+      "proposal": "Encode budget levels in their ordered grid positions 0..4 and report predicted-position minus M*-position, plus its absolute value, separately from numeric-K error.",
+      "rationale": "Adjacent categorical budget mistakes should be distinguishable from jumps across several ordered levels without implying equal numeric spacing.",
+      "impact": "Defines the ordinal allocation-error scale and its summaries."
+    },
+    "uncertainty_and_inference": {
+      "proposal": "Treat allocation, hard-detection, and quality-cost outputs as descriptive diagnosis unless a separate inference plan is approved. If uncertainty is approved, use query-level paired/nonparametric bootstrap with fixed count/seed and report rare-class support; do not infer from repeated rows.",
+      "rationale": "CT2.2 is diagnostic and the protocol has not registered a CI/test/multiplicity family for its many related summaries.",
+      "impact": "Prevents post-hoc significance claims and requires a separate approval before CIs or tests are emitted."
+    },
+    "error_patterns": {
+      "proposal": "Pre-specify descriptive cross-tabs by M* category, predicted K, and under/exact/over-allocation. Treat feature/pool-signal associations as exploratory descriptive analyses only, with reported subgroup N and no causal interpretation; do not create outcome-selected failure groups.",
+      "rationale": "These partitions directly correspond to allocation behavior and limit narrative selection after results are observed.",
+      "impact": "Any additional subgroup, test, or correction family requires amendment before it is used for confirmatory inference."
+    },
+    "policy_comparisons": {
+      "proposal": "Do not add a policy-comparison hypothesis in CT2.2. Report only diagnostic quality/cost consequences of the approved Full OOF policy; Gate A, Gate C, and Gate E remain separate procedures.",
+      "rationale": "Prevents diagnosis from being recast as an unregistered acceptance/comparison gate.",
+      "impact": "No controller redesign or CT2.4 activation follows from CT2.2 alone."
+    }
+  },
+  "execution_authorized": false
+}

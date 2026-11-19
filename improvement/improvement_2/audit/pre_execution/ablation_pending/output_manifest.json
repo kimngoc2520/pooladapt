@@ -1,0 +1,8 @@
+{
+  "run_id": "ct2_1_ablation_20261118_pending",
+  "status": "NO_CONFIRMATORY_OUTPUTS_GENERATED",
+  "reason": "Protocol freeze, essential controlled-CV/calibration/inference decisions, and a CT2.1-compatible runner are all absent.",
+  "intentionally_absent_until_approval_and_implementation": ["fold_manifests", "inner_cv_records", "per_fold_records", "configuration_predictions", "oof_predictions", "oof_aggregation_records", "absent_class_diagnostics", "training_configurations", "model_checkpoints", "query_level_evaluation", "aggregate_metrics", "statistical_comparisons", "calibration_records", "gate_c_outputs"],
+  "pre_execution_artifacts": ["configuration_pending_approval.json", "input_manifest.json", "output_manifest.json", "reproducibility_manifest.json", "ct2_1_ablation_report.md"],
+  "overwrite_policy": "A future approved run requires a new run ID and must not overwrite this package or historical Phase 2 artifacts."
+}

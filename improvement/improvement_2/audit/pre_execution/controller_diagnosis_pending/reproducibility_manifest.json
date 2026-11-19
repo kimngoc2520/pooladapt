@@ -1,0 +1,13 @@
+{
+  "run_id": "ct2_2_controller_diagnosis_20261118_pending",
+  "stage": "CT2.2 / Controller Diagnosis",
+  "created_on": "2026-11-18",
+  "repository_commit": "2977ebfb2a4eaa18945c129bd0f4448c30f4fddc",
+  "protocol_sha256": "49d3298c829d05c3e8bef21854154b42cc22c6ff9751dede04ef21b2276c81d7",
+  "protocol_status": "draft_not_frozen",
+  "execution": {"performed": false, "command": null, "environment": null, "runtime": null, "deviations": ["Diagnosis intentionally stopped before incremental alignment validation and all diagnostic computations because the required CT2.1 OOF artifact and approvals are absent."]},
+  "population": "SciFact TRAIN+VALIDATION only (expected N=809; inherited Hard N=52); TEST excluded",
+  "input_manifest": "input_manifest.json",
+  "output_manifest": "output_manifest.json",
+  "required_before_execution": ["approved CT2.1 Full aggregated OOF artifact and manifest", "approved OOF aggregation and absent-class policy", "approved hard score and discrete decision rule", "approved uncertainty/inference plan if statistical outputs are requested", "stage-specific query-level alignment validation"]
+}

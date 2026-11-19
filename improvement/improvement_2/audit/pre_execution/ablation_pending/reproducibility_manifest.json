@@ -1,0 +1,13 @@
+{
+  "run_id": "ct2_1_ablation_20261118_pending",
+  "stage": "CT2.1 / Controlled Feature Ablation",
+  "created_on": "2026-11-18",
+  "repository_commit": "2977ebfb2a4eaa18945c129bd0f4448c30f4fddc",
+  "protocol_sha256": "49d3298c829d05c3e8bef21854154b42cc22c6ff9751dede04ef21b2276c81d7",
+  "protocol_status": "draft_not_frozen",
+  "execution": {"performed": false, "command": null, "environment": null, "runtime": null, "deviations": ["All confirmatory CT2.1 operations were intentionally stopped before dependency validation, fold construction, training, calibration, and comparison."]},
+  "population": "SciFact TRAIN+VALIDATION only (expected N=809); TEST excluded",
+  "input_manifest": "input_manifest.json",
+  "output_manifest": "output_manifest.json",
+  "approval_and_implementation_required": ["frozen protocol/version/hash", "all decisions in configuration_pending_approval.json", "development-only controlled nested-CV runner", "versioned fold/run/output schemas", "non-overwriting artifact handling"]
+}

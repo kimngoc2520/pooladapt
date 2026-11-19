@@ -1,0 +1,71 @@
+{
+  "run_id": "ct2_1_ablation_20261118_pending",
+  "stage": "CT2.1 / Controlled Feature Ablation",
+  "status": "BLOCKED_PENDING_GROUP_APPROVAL_AND_IMPLEMENTATION",
+  "purpose": "Pre-execution decision package only. No folds, training, OOF predictions, calibration, Gate C, or statistical comparison has been run.",
+  "fixed_draft_settings": {
+    "dataset": "SciFact development only",
+    "population_n": 809,
+    "test_included": false,
+    "candidate_pool_size": 100,
+    "budget_grid": [10, 20, 30, 50, 100],
+    "tau": 0.99,
+    "hard_definition": "M_star > 10",
+    "outer_cv": "RepeatedStratifiedKFold(n_splits=5, n_repeats=10, seeds=0..9)",
+    "strata": ["{10}", "{20,30}", "{50,100}"],
+    "inner_cv": "StratifiedKFold(n_splits=3)",
+    "C_grid": [0.01, 0.1, 1.0, 10.0],
+    "preprocessing": "median imputation and scaling fit only within each training fold",
+    "feature_configurations": {
+      "full": ["top1_top2_rrf_margin", "top20_overlap", "rank_correlation_union", "score_entropy", "score_gini", "redundancy", "concentration", "sparse_dense_agreement", "sparse_dense_disagreement", "query_length", "num_numeric_tokens", "avg_idf", "max_idf"],
+      "pool_only": ["top1_top2_rrf_margin", "top20_overlap", "rank_correlation_union", "score_entropy", "score_gini", "redundancy", "concentration", "sparse_dense_agreement", "sparse_dense_disagreement"],
+      "query_only": ["query_length", "num_numeric_tokens", "avg_idf", "max_idf"]
+    },
+    "primary_contrast": "Full - Query-only",
+    "secondary_contrasts": ["Full - Pool-only", "Pool-only - Query-only"]
+  },
+  "pending_group_approval": {
+    "protocol_freeze": "Approve CT2 version/hash and the recorded design before any confirmatory data operation.",
+    "inner_objective_and_C_selection": {
+      "proposal": "Select C by mean macro-F1 across the three inner validation folds using the five M* classes; break ties by smaller C.",
+      "rationale": "The M* labels are extremely imbalanced, so ordinary accuracy would be dominated by K=10. Macro-F1 treats each budget class explicitly; selecting a smaller C under an exact tie gives a deterministic lower-complexity rule.",
+      "impact": "This is a model-selection objective, not an outer quality endpoint. A different approved objective can change selected C values and all OOF predictions."
+    },
+    "inner_fold_aggregation": {
+      "proposal": "Compute the objective separately on each inner validation fold and use their unweighted arithmetic mean for C selection.",
+      "rationale": "Each fold is an independently held-out partition of the outer-training data, and equal weighting avoids implicit reweighting.",
+      "impact": "Defines the selected C when inner scores vary."
+    },
+    "repeated_OOF_aggregation": {
+      "proposal": "For each configuration/query, retain all ten outer-held-out probability vectors and predicted budgets, align five-class probabilities by budget label, average probabilities across repeats, then derive one aggregate predicted budget by the registered argmax/tie rule.",
+      "rationale": "Each query has one held-out prediction per repeat; a query-level aggregate prevents treating 10 correlated repeated rows as independent observations while retaining traceability.",
+      "impact": "Defines the analysis unit and downstream calibration/diagnostic inputs. It must specify approved handling if a fold lacks a class."
+    },
+    "absent_class_handling": {
+      "proposal": "Store the observed model class labels for every fold; align only observed probability columns to the five-label schema and assign no fabricated probability to an absent class. If aggregation requires a complete vector, declare the affected fold/configuration unavailable unless the group explicitly approves a mathematically specified alternative.",
+      "rationale": "The existing 1e-12 clamp is a legacy numerical fallback, not an approved controlled-CV policy, and severe rarity makes absent classes plausible.",
+      "impact": "May make some folds/configurations unavailable; silently fabricated probabilities would bias OOF aggregation."
+    },
+    "calibration_temperature_lambda_and_budget_matching": {
+      "proposal": "Separate direct ablation from Gate C. For direct ablation, report the pre-calibration aggregate OOF policy at T=1 and lambda=0 as a descriptive, common policy; do not claim cost matching. If controlled cost matching is required, fit it only inside the approved nested procedure on outer-training data, apply once to its outer holdout, and register targets/tolerance before execution.",
+      "rationale": "The historical validation-only lambda sweep is not a controlled-CV procedure. Separating it avoids leaking outer-holdout information into workload choice and avoids conflating ablation with the null comparison.",
+      "impact": "The group must decide whether uncalibrated direct-ablation comparison answers the primary contrast or whether an approved nested calibration is mandatory. This decision changes reported costs and quality."
+    },
+    "gate_C_null_and_targets": {
+      "proposal": "Do not execute Gate C within the direct ablation until a distinct null procedure is approved. If approved, use the protocol's proposed common targets {11,12,14,17,20} with absolute average-K tolerance 0.1; construct the null by an approved query-label permutation within each evaluated population/repeat, preserve the chosen budget multiset, use a predeclared seed/repetition count, and compare at common available target levels only.",
+      "rationale": "This preserves the empirical budget distribution while disrupting the query-feature-to-budget association and does not substitute historical targets {10,20,30,50} or a 5% relative tolerance.",
+      "impact": "Target feasibility, null expectation/permutation choice, repetitions, and unavailable-target policy determine Gate-C estimands and may exclude levels."
+    },
+    "statistics_CI_multiplicity_metric_hierarchy": {
+      "proposal": "Register nDCG@10 as the primary quality endpoint for Full-vs-Query-only; Recall@10 and MRR@10 plus secondary contrasts are secondary. Use paired query-level differences from one approved aggregate OOF value/query; report two-sided 95% percentile paired-bootstrap CIs (10,000 resamples, seed 20261118) for mean differences and apply Holm correction across the predeclared three configuration contrasts and three quality metrics. Do not use repeated fold rows as independent observations.",
+      "rationale": "It makes the primary question and multiplicity family explicit, preserves pairing, and separates descriptive allocation/cost results from quality inference.",
+      "impact": "The hierarchy, interval procedure, family, seed, and handling of unavailable comparisons must be frozen because they control claims of support/inconclusiveness."
+    },
+    "Gate_C_interpretation": {
+      "proposal": "Use Gate C only for Current-versus-cost-matched-null at each common available cost level; register delta_C, CI bound rule, aggregation across levels, and multiplicity before execution. Do not use a Gate-C result to judge direct Full/Query-only/Pool-only ablation.",
+      "rationale": "The protocol explicitly distinguishes the two comparisons.",
+      "impact": "Prevents causal/contribution claims from a null-policy test or vice versa."
+    }
+  },
+  "execution_authorized": false
+}

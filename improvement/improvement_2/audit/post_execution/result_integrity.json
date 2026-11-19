@@ -1,0 +1,24 @@
+{
+  "record_type": "post_execution_result_integrity",
+  "verified_on": "2026-11-19",
+  "run_id": "development_execution_20261118T175713Z",
+  "verification_scope": "SHA-256 inventory of original result CSV files; no result file was modified or relocated during reconciliation.",
+  "files": {
+    "allocation_diagnosis/allocation_failure_group_analysis.csv": "6396e7f519355d0335bd59f2418344a81be686d4c72e620b9b537b91b454e88b",
+    "allocation_diagnosis/budget_allocation_diagnosis.csv": "725f925635f814b0550086292f9227aa64d24d71b53334f9ec25aaee25c438a7",
+    "allocation_diagnosis/hard_query_confusion_matrix.csv": "46295b7aa7b932193b7571fdc9bbe612b344c45eccde453b119be9e2fd98d443",
+    "allocation_diagnosis/hard_query_detection_metrics.csv": "7da01ccbbec724f29bf14f3b2a18a45ec35232526513529904072e62c75f5cce",
+    "feature_ablation/cost_matched_null_gate_c_calibration.csv": "3bb22988b342f76600f6c37f87657d6b544d04aca16902d0f656095e5e705a32",
+    "feature_ablation/cost_matched_null_gate_c_results.csv": "6afb2d349fea409481c5f49cc33d013357944dbd24d2569edfa9298c4d4cef5b",
+    "feature_ablation/feature_ablation_fold_results.csv": "90bf7d89f318dd014e930a9de93fb4ca24e1a7772d8bb06899654d22fa001518",
+    "feature_ablation/feature_ablation_metrics.csv": "bc1eff9b8cf44adb450e70b68d334c50449b396b612bab31e98f4e4fe9b2c0e4",
+    "feature_ablation/feature_ablation_oof_predictions.csv": "ece6ef3d0b475d4bb473c5d2c71830dacaeac6f6d6ee529215088137d20c499e",
+    "feature_ablation/feature_ablation_statistical_analysis.csv": "e7305f21fa33c27e1a499685e3a384ced6377f6359b2135044f6d04ba9212f31",
+    "feature_ablation/full_query_level_evaluation.csv": "69304331761fab6fc975e94afa5b6174b1b7db00891e6958835177633f1ccca6",
+    "feature_ablation/pool_only_query_level_evaluation.csv": "f9e2ee508946be20418d89ecdd4e41954bdbc698ce6cc9a75c2d1bd2de774a52",
+    "feature_ablation/query_only_query_level_evaluation.csv": "1c628651a9b2466cd60686c9c16a506d28276097f7e7cea3858e68c5f6d054a8",
+    "oracle_headroom/oracle_headroom_metrics.csv": "551a355e6419fbc2e841b6011251fb075695b5cf77952b1092dddd3e730f3e82",
+    "oracle_headroom/oracle_headroom_query_results.csv": "aacf288c3ec58c757801ca4a043c7708502d1173943f9130c9088b79a17ca505",
+    "oracle_headroom/oracle_headroom_statistical_analysis.csv": "902f8754d011e000df6e88dad6a78cc63c2add9482508d3195c6353fd39e6be8"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "audit_date": "2026-11-17",
+  "repository_commit": "2977ebfb2a4eaa18945c129bd0f4448c30f4fddc",
+  "scope": "Audit-only preparation for Improvement 2 / CT2 Method",
+  "status": {
+    "feature_extraction": "COMPLETE_DEVELOPMENT_PARTIAL_HISTORICAL_TEST_PROVENANCE",
+    "dataset_splits": "COMPLETE",
+    "oracle_mstar": "COMPLETE",
+    "selector": "COMPLETE",
+    "existing_ct2_experiments": "PARTIAL"
+  },
+  "features_verified": 13,
+  "splits": {"train_queries": 647, "validation_queries": 162, "test_queries": 300, "overlap_verified": true},
+  "oracle": {"taus_verified": [0.95, 0.98, 0.99], "primary_tau": 0.99, "easy_queries": 757, "hard_queries": 52},
+  "selector": {"model": "LogisticRegression", "classes": [10, 20, 30, 50, 100], "class_weight": "balanced", "preprocessing": ["median imputation", "StandardScaler"], "training_queries": 647},
+  "ct2_artifacts": {"full_feature_selector": "COMPLETE", "query_only_selector": "MISSING", "pool_only_selector": "MISSING", "feature_mstar_associations": "COMPLETE", "easy_hard_distributions": "COMPLETE", "roc_pr_binary_feasibility": "PARTIAL", "hard_precision_recall": "MISSING", "confusion_matrices": "MISSING", "budget_and_k": "COMPLETE", "query_level_quality_latency": "COMPLETE"},
+  "unresolved_issues": ["No controlled full/query-only/pool-only ablation exists.", "No hard-query precision/recall or selector confusion matrix exists.", "Historical TEST controller-feature provenance is not verified; reconstructed TEST features are not historical proof.", "Improvement 1 provenance audit records two FAIL and three NOT VERIFIED items.", "Extreme M* class imbalance, especially only one K=100 TRAIN label."]
+}
